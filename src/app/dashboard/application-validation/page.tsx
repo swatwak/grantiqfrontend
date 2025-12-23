@@ -85,9 +85,9 @@ export default function ApplicationValidationPage() {
   const [applications, setApplications] = useState<ApiApplication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<"all" | ApiApplicationStatus>(
-    "all",
-  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | ApiApplicationStatus
+  >("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedApplication, setSelectedApplication] =
@@ -114,7 +114,7 @@ export default function ApplicationValidationPage() {
               "Content-Type": "application/json",
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
-          },
+          }
         );
 
         if (!response.ok) {
@@ -123,7 +123,7 @@ export default function ApplicationValidationPage() {
             | undefined;
           throw new Error(
             (data && data.message) ||
-              "Unable to load applications. Please try again.",
+              "Unable to load applications. Please try again."
           );
         }
 
@@ -182,37 +182,39 @@ export default function ApplicationValidationPage() {
           <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
             Application Validation
           </h1>
-          <p className="text-sm text-slate-700 mt-1 max-w-xl">
+          <p className="text-sm text-slate-600 mt-1 max-w-xl">
             Review and validate incoming scholarship applications before moving
             them to scrutiny and recommendation stages.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex flex-col items-end text-xs text-slate-200">
+          <div className="hidden sm:flex flex-col items-end text-xs text-slate-600">
             <span>Step 1 of 3</span>
-            <span className="text-slate-400">Validation → Scrutiny → Recommendation</span>
+            <span className="text-slate-500">
+              Validation → Scrutiny → Recommendation
+            </span>
           </div>
-          <div className="h-10 rounded-full bg-slate-950/60 border border-slate-700/80 px-4 flex items-center gap-2 text-xs text-slate-100">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-pink-500/30 text-[11px]">
+          <div className="h-10 rounded-lg bg-blue-50 border border-blue-200 px-4 flex items-center gap-2 text-xs text-blue-900">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white text-[11px] font-semibold">
               1
             </span>
-            <span>Validation Stage</span>
+            <span className="font-medium">Validation Stage</span>
           </div>
         </div>
       </div>
 
-      <div className="rounded-3xl bg-slate-950/40 border border-white/10 backdrop-blur-xl shadow-xl shadow-purple-900/40 overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
           <div className="flex items-center gap-3">
-            <span className="h-8 w-8 rounded-xl bg-pink-500/20 text-pink-300 flex items-center justify-center text-base">
+            <span className="h-8 w-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-base">
               🔍
             </span>
             <div>
-              <p className="text-sm font-medium text-white">
+              <p className="text-sm font-medium text-slate-900">
                 Validation Queue
               </p>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-slate-600">
                 {isLoading
                   ? "Loading applications..."
                   : `${filteredAndSortedApplications.length} applications in queue`}
@@ -220,24 +222,26 @@ export default function ApplicationValidationPage() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-slate-200 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-slate-600 w-full sm:w-auto">
             <div className="flex-1">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by applicant name or application ID"
-                className="w-full rounded-full bg-slate-900/70 border border-slate-700/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                className="w-full rounded-lg bg-white border border-slate-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="hidden sm:inline text-slate-400">Status</span>
+              <span className="hidden sm:inline text-slate-500">Status</span>
               <select
                 value={statusFilter}
                 onChange={(e) =>
-                  setStatusFilter(e.target.value as "all" | ApiApplicationStatus)
+                  setStatusFilter(
+                    e.target.value as "all" | ApiApplicationStatus
+                  )
                 }
-                className="rounded-full bg-slate-900/70 border border-slate-700/80 px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                className="rounded-lg bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All</option>
                 <option value="draft">Draft</option>
@@ -252,31 +256,33 @@ export default function ApplicationValidationPage() {
 
         <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
           {error ? (
-            <div className="px-5 py-6 text-sm text-rose-200">
+            <div className="px-5 py-6 text-sm text-rose-600 bg-rose-50">
               {error}
             </div>
           ) : applications.length === 0 && !isLoading ? (
-            <div className="px-5 py-6 text-sm text-slate-200">
+            <div className="px-5 py-6 text-sm text-slate-600">
               No applications found yet. Once students start submitting, they
               will appear here for validation.
             </div>
           ) : (
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="bg-slate-950/70 text-left text-xs uppercase tracking-wide text-slate-400">
-                  <th className="px-5 py-3 font-medium">Applicant Name</th>
-                  <th className="px-5 py-3 font-medium">Application ID</th>
-                  <th className="px-5 py-3 font-medium">Current Step</th>
-                  <th className="px-5 py-3 font-medium">Application Status</th>
-                  <th className="px-5 py-3 font-medium">
+                <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600 border-b border-slate-200">
+                  <th className="px-5 py-3 font-semibold">Applicant Name</th>
+                  <th className="px-5 py-3 font-semibold">Application ID</th>
+                  <th className="px-5 py-3 font-semibold">Current Step</th>
+                  <th className="px-5 py-3 font-semibold">
+                    Application Status
+                  </th>
+                  <th className="px-5 py-3 font-semibold">
                     <button
                       type="button"
                       onClick={() =>
                         setSortOrder((prev) =>
-                          prev === "asc" ? "desc" : "asc",
+                          prev === "asc" ? "desc" : "asc"
                         )
                       }
-                      className="inline-flex items-center gap-1 text-xs font-medium text-slate-300 hover:text-white"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900"
                     >
                       Submitted At
                       <span className="text-[10px]">
@@ -284,36 +290,38 @@ export default function ApplicationValidationPage() {
                       </span>
                     </button>
                   </th>
-                  <th className="px-5 py-3 font-medium text-right">Actions</th>
+                  <th className="px-5 py-3 font-semibold text-right">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredAndSortedApplications.map((application, index) => (
                   <tr
                     key={application.id}
-                    className={`border-t border-slate-800/80 ${
-                      index % 2 === 0 ? "bg-slate-950/40" : "bg-slate-950/20"
+                    className={`border-t border-slate-100 ${
+                      index % 2 === 0 ? "bg-white" : "bg-slate-50"
                     }`}
                   >
-                    <td className="px-5 py-3 text-slate-100">
+                    <td className="px-5 py-3 text-slate-900">
                       {application.full_name || "—"}
                     </td>
-                    <td className="px-5 py-3 text-slate-200 font-mono text-[13px]">
+                    <td className="px-5 py-3 text-slate-600 font-mono text-[13px]">
                       {application.application_id}
                     </td>
-                    <td className="px-5 py-3 text-slate-200 text-xs">
+                    <td className="px-5 py-3 text-slate-600 text-xs">
                       Step {application.current_step}
                     </td>
                     <td className="px-5 py-3">
                       <span
                         className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-medium ${statusStyles(
-                          application.application_status,
+                          application.application_status
                         )}`}
                       >
                         {application.application_status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-slate-300 text-xs">
+                    <td className="px-5 py-3 text-slate-600 text-xs">
                       {application.submitted_at
                         ? formatDate(application.submitted_at)
                         : "Not submitted"}
@@ -322,7 +330,7 @@ export default function ApplicationValidationPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedApplication(application)}
-                        className="inline-flex items-center rounded-full bg-slate-900/70 border border-slate-600/80 px-3 py-1.5 text-[11px] font-medium text-slate-100 hover:bg-slate-800/90"
+                        className="inline-flex items-center rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-[11px] font-medium text-white transition-colors"
                       >
                         View
                       </button>
@@ -338,15 +346,15 @@ export default function ApplicationValidationPage() {
       {selectedApplication && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-5xl rounded-3xl bg-white border border-slate-200 shadow-2xl shadow-slate-900/30 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4 bg-gradient-to-r from-[#349FC9] via-[#60a5fa] to-[#e0f2fe]">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4 bg-blue-600">
               <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-sky-100/90 mb-1">
+                <p className="text-xs uppercase tracking-wider text-blue-100 mb-1 font-semibold">
                   Application Overview
                 </p>
                 <h2 className="text-lg font-semibold text-white">
                   {selectedApplication.full_name || "Unnamed Applicant"}
                 </h2>
-                <p className="text-xs text-sky-100/90 mt-1">
+                <p className="text-xs text-blue-100 mt-1">
                   ID:{" "}
                   <span className="font-mono">
                     {selectedApplication.application_id}
@@ -361,7 +369,7 @@ export default function ApplicationValidationPage() {
               <button
                 type="button"
                 onClick={() => setSelectedApplication(null)}
-                className="text-black hover:text-black-500 text-sm px-2 py-1 rounded-lg bg-black/50 hover:bg-black/10"
+                className="text-white hover:text-white/80 text-lg px-2 py-1 rounded-lg hover:bg-white/10 transition-colors"
               >
                 ✕
               </button>
@@ -481,15 +489,21 @@ export default function ApplicationValidationPage() {
                     <select
                       value={selectedDocType}
                       onChange={(e) => setSelectedDocType(e.target.value)}
-                      className="rounded-full bg-white border border-slate-300 px-3 py-1.5 text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+                      className="rounded-full bg-white border border-slate-300 px-3 py-1.5 text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                     >
                       <option value="form16">Form 16</option>
-                      <option value="caste_certificate">Caste Certificate</option>
+                      <option value="caste_certificate">
+                        Caste Certificate
+                      </option>
                       <option value="marksheet_10th">10th Marksheet</option>
                       <option value="marksheet_12th">12th Marksheet</option>
-                      <option value="marksheet_graduation">
-                        Graduation Marksheet
+                      <option value="graduation">Graduation Marksheet</option>
+                      <option value="offer_letter">Offer Letter</option>
+                      <option value="bank_passbook">Bank Passbook</option>
+                      <option value="statement_of_purpose">
+                        Statement of Purpose
                       </option>
+                      <option value="cv">CV/Resume</option>
                     </select>
                     <button
                       type="button"
@@ -510,13 +524,15 @@ export default function ApplicationValidationPage() {
                               method: "POST",
                               headers: {
                                 "Content-Type": "application/json",
-                                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                                ...(token
+                                  ? { Authorization: `Bearer ${token}` }
+                                  : {}),
                               },
                               body: JSON.stringify({
-                                application_id: selectedApplication.application_id,
+                                application_id: selectedApplication.id,
                                 type: selectedDocType,
                               }),
-                            },
+                            }
                           );
 
                           const rawError = await (async () => {
@@ -543,7 +559,9 @@ export default function ApplicationValidationPage() {
                             throw new Error(rawError);
                           }
 
-                          const data = (await response.json().catch(() => ({}))) as {
+                          const data = (await response
+                            .json()
+                            .catch(() => ({}))) as {
                             url?: string;
                             presigned_url?: string;
                             data?: { url?: string; presigned_url?: string };
@@ -572,7 +590,7 @@ export default function ApplicationValidationPage() {
                           setIsViewDocsLoading(false);
                         }
                       }}
-                      className="inline-flex items-center rounded-full bg-sky-600 border border-sky-500 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="inline-flex items-center rounded-full bg-blue-600 border border-blue-500 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {isViewDocsLoading ? "Opening..." : "View Documents"}
                     </button>
@@ -615,13 +633,11 @@ export default function ApplicationValidationPage() {
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">
-                      Caste Validity Issue
-                    </span>
+                    <span className="text-slate-400">Caste Validity Issue</span>
                     <span className="font-medium text-right">
                       {selectedApplication.caste_validity_issue_date
                         ? formatDate(
-                            selectedApplication.caste_validity_issue_date,
+                            selectedApplication.caste_validity_issue_date
                           )
                         : "—"}
                     </span>
@@ -657,4 +673,3 @@ export default function ApplicationValidationPage() {
     </div>
   );
 }
-

@@ -37,9 +37,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       window.localStorage.getItem("grantiq_user_label") ||
       window.localStorage.getItem("grantiq_email");
     if (stored && stored.trim().length > 0) {
-      const label = stored.includes("@")
-        ? stored.split("@")[0]
-        : stored;
+      const label = stored.includes("@") ? stored.split("@")[0] : stored;
       setDisplayName(label);
     }
   }, []);
@@ -50,15 +48,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#349FC9] via-[#e5e7eb] to-[#e0f2fe] flex flex-col">
-      <header className="h-16 border-b border-white/10 bg-slate-950/40 backdrop-blur-xl px-6 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-2xl bg-gradient-to-tr from-[#fb7185] to-[#f97316] flex items-center justify-center shadow-lg shadow-pink-500/40">
+          <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
             <span className="text-sm font-semibold text-white">IQ</span>
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">GrantIQ</p>
-            <p className="text-[11px] text-pink-200/80">
+            <p className="text-sm font-semibold text-slate-900">GrantIQ</p>
+            <p className="text-[11px] text-slate-600">
               Smart Scholarship Management Platform
             </p>
           </div>
@@ -68,9 +66,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <button
             type="button"
             onClick={() => setIsUserMenuOpen((open) => !open)}
-            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#fb7185] to-[#f97316] px-4 py-1.5 shadow-lg shadow-pink-500/30 text-white text-xs font-medium"
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 hover:bg-blue-700 text-white text-xs font-medium transition-colors"
           >
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
               {/* simple person icon */}
               <span className="text-[13px]">👤</span>
             </span>
@@ -79,11 +77,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </button>
 
           {isUserMenuOpen && (
-            <div className="absolute right-0 top-11 w-40 rounded-2xl bg-slate-950 border border-slate-700/80 shadow-xl shadow-slate-900/70 py-1 text-xs text-slate-100">
+            <div className="absolute right-0 top-12 w-40 rounded-lg bg-white border border-slate-200 shadow-lg py-1 text-xs text-slate-700">
               <button
                 type="button"
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-2 hover:bg-slate-900/80 rounded-2xl"
+                className="w-full text-left px-4 py-2 hover:bg-slate-50 transition-colors"
               >
                 Logout
               </button>
@@ -93,15 +91,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-72 bg-slate-950/50 border-r border-white/10 backdrop-blur-xl hidden md:flex flex-col">
+        <aside className="w-72 bg-white border-r border-slate-200 hidden md:flex flex-col">
           <div className="px-5 pt-6 pb-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-400 mb-4">
+            <p className="text-xs uppercase tracking-wider text-slate-500 mb-4 font-semibold">
               Grantor Console
             </p>
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-slate-900">
               Application Workflow
             </h2>
-            <p className="text-xs text-slate-300 mt-1">
+            <p className="text-xs text-slate-600 mt-1">
               Track and manage scholarship applications across all stages.
             </p>
           </div>
@@ -116,10 +114,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   onClick={() => {
                     if (!item.disabled) router.push(item.href);
                   }}
-                  className={`w-full flex items-center justify-between gap-2 rounded-xl px-3 py-3 text-sm transition-all ${
+                  className={`w-full flex items-center justify-between gap-2 rounded-lg px-3 py-3 text-sm transition-all ${
                     isActive
-                      ? "bg-gradient-to-r from-pink-500/90 to-orange-400/90 text-white shadow-lg shadow-pink-500/40"
-                      : "text-slate-200 hover:bg-slate-900/70"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-700 hover:bg-slate-100"
                   } ${item.disabled ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
                   <span>{item.label}</span>
@@ -131,12 +129,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-          <div className="px-4 py-4 border-t border-white/10 text-xs text-slate-300 flex items-center justify-between">
-            <span className="text-slate-400">Manage GrantIQ engine settings</span>
+          <div className="px-4 py-4 border-t border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+            <span className="text-slate-500">
+              Manage GrantIQ engine settings
+            </span>
             <button
               type="button"
               onClick={() => router.push("/dashboard/engine-rules")}
-              className="inline-flex items-center rounded-full bg-slate-900/80 border border-slate-600/80 px-3 py-1.5 text-[11px] font-medium text-slate-100 hover:bg-slate-800/90"
+              className="inline-flex items-center rounded-lg bg-slate-100 border border-slate-300 px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-200 transition-colors"
             >
               Config
             </button>
@@ -150,4 +150,3 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     </div>
   );
 }
-

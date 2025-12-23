@@ -53,7 +53,7 @@ export default function RegisterPage() {
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(
-          data.message || "Unable to create account. Please try again.",
+          data.message || "Unable to create account. Please try again."
         );
       }
 
@@ -61,7 +61,9 @@ export default function RegisterPage() {
       router.push("/");
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Something went wrong. Please try again.";
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -69,18 +71,18 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#349FC9] via-[#e5e7eb] to-[#e0f2fe] flex items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10">
       <div className="max-w-6xl w-full flex flex-col lg:flex-row items-center gap-16">
-        <div className="flex-1 text-center lg:text-left text-slate-900">
+        <div className="flex-1 text-center lg:text-left">
           <div className="inline-flex items-center gap-3 mb-6">
-            <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-[#fb7185] to-[#f97316] flex items-center justify-center shadow-lg shadow-pink-500/40">
-              <span className="text-2xl font-semibold">IQ</span>
+            <div className="h-12 w-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
+              <span className="text-2xl font-semibold text-white">IQ</span>
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-pink-500/80">
+              <p className="text-sm uppercase tracking-wider text-blue-600 font-semibold">
                 GrantIQ
               </p>
-              <p className="text-base font-semibold text-pink-600">
+              <p className="text-base font-semibold text-slate-700">
                 Smart Scholarship Management for Grantors
               </p>
             </div>
@@ -95,19 +97,19 @@ export default function RegisterPage() {
         </div>
 
         <div className="flex-1 flex justify-center">
-          <div className="w-full max-w-md rounded-3xl bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl shadow-purple-900/40 px-8 py-10">
+          <div className="w-full max-w-md rounded-xl bg-white border border-slate-200 shadow-lg px-8 py-10">
             <div className="mb-8 text-center">
-              <h2 className="text-2xl font-semibold text-white mb-1">
+              <h2 className="text-2xl font-semibold text-slate-900 mb-1">
                 Create Account
               </h2>
-              <p className="text-sm text-violet-100/80">
+              <p className="text-sm text-slate-600">
                 Register as a grantor to access GrantIQ.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-violet-100/90">
+                <label className="block text-sm font-medium text-slate-700">
                   Email Address
                 </label>
                 <input
@@ -115,25 +117,26 @@ export default function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="w-full rounded-2xl bg-slate-900/60 border border-slate-700/80 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  className="w-full rounded-lg bg-white border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-violet-100/90">
-                  Phone Number <span className="text-slate-400">(optional)</span>
+                <label className="block text-sm font-medium text-slate-700">
+                  Phone Number{" "}
+                  <span className="text-slate-500">(optional)</span>
                 </label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Enter phone number"
-                  className="w-full rounded-2xl bg-slate-900/60 border border-slate-700/80 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  className="w-full rounded-lg bg-white border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-violet-100/90">
+                <label className="block text-sm font-medium text-slate-700">
                   Password
                 </label>
                 <input
@@ -141,12 +144,12 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full rounded-2xl bg-slate-900/60 border border-slate-700/80 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  className="w-full rounded-lg bg-white border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-violet-100/90">
+                <label className="block text-sm font-medium text-slate-700">
                   Confirm Password
                 </label>
                 <input
@@ -154,12 +157,12 @@ export default function RegisterPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm your password"
-                  className="w-full rounded-2xl bg-slate-900/60 border border-slate-700/80 px-4 py-3 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  className="w-full rounded-lg bg-white border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               {error && (
-                <p className="text-sm text-pink-300 bg-pink-950/40 border border-pink-500/40 rounded-xl px-3 py-2">
+                <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                   {error}
                 </p>
               )}
@@ -167,18 +170,17 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#fb7185] to-[#f97316] px-4 py-3 text-sm font-medium text-white shadow-lg shadow-pink-500/40 transition-transform hover:translate-y-[1px] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-3 text-sm font-medium text-white shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Creating Account..." : "Create Account"}
               </button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-violet-100/80">
-              Already have an account?
-              {" "}
+            <div className="mt-6 text-center text-sm text-slate-600">
+              Already have an account?{" "}
               <Link
                 href="/"
-                className="font-medium text-blue-700 hover:text-pink-200 underline underline-offset-4"
+                className="font-medium text-blue-600 hover:text-blue-700 underline underline-offset-4"
               >
                 Sign In
               </Link>
@@ -189,4 +191,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
