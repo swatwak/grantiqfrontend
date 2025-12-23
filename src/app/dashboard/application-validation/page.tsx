@@ -4,6 +4,24 @@ import { useEffect, useState } from "react";
 
 type ApiApplicationStatus = string;
 
+type VerificationResult = {
+  success: boolean;
+  message: string;
+  data: any;
+  is_eligible: boolean | null;
+};
+
+type ValidationResultData = {
+  success: boolean;
+  message: string;
+  application_id: string;
+  verification_results: {
+    [docType: string]: VerificationResult;
+  };
+  overall_success: boolean;
+  overall_eligible: boolean;
+};
+
 type ApiApplication = {
   id: number;
   application_id: string;
@@ -35,6 +53,7 @@ type ApiApplication = {
   current_step: number;
   submitted_at: string | null;
   updated_at: string;
+  validation_result: string | null;
 };
 
 type ApiResponse = {
@@ -81,6 +100,67 @@ function formatDate(value: string) {
   });
 }
 
+function parseValidationResult(
+  validationResultStr: string | null
+): ValidationResultData | null {
+  if (!validationResultStr) return null;
+
+  try {
+    // First, try parsing as-is in case it's already JSON
+    return JSON.parse(validationResultStr) as ValidationResultData;
+  } catch {
+    // If that fails, try converting from Python dict format
+    try {
+      // Use a safer approach: leverage eval with proper safeguards
+      // Replace Python literals with JS equivalents
+      const jsCode = validationResultStr
+        .replace(/\bTrue\b/g, "true")
+        .replace(/\bFalse\b/g, "false")
+        .replace(/\bNone\b/g, "null");
+
+      // Use Function constructor to safely evaluate the Python dict as JS object literal
+      // This works because Python dict syntax is similar to JS object literal syntax
+      const result = new Function(`return ${jsCode}`)();
+
+      // Convert to JSON and back to ensure proper structure
+      return JSON.parse(JSON.stringify(result)) as ValidationResultData;
+    } catch (error) {
+      console.error("Failed to parse validation_result:", error);
+      console.error(
+        "Raw value (first 500 chars):",
+        validationResultStr?.substring(0, 500)
+      );
+
+      // Last resort: try simple string replacement
+      try {
+        const jsonStr = validationResultStr
+          .replace(/\bTrue\b/g, "true")
+          .replace(/\bFalse\b/g, "false")
+          .replace(/\bNone\b/g, "null")
+          .replace(/'/g, '"');
+        return JSON.parse(jsonStr) as ValidationResultData;
+      } catch {
+        return null;
+      }
+    }
+  }
+}
+
+function getDocumentTypeLabel(docType: string): string {
+  const labels: { [key: string]: string } = {
+    form16: "Form 16 (Income)",
+    caste_certificate: "Caste Certificate",
+    marksheet_10th: "10th Marksheet",
+    marksheet_12th: "12th Marksheet",
+    marksheet_graduation: "Graduation Marksheet",
+    offer_letter: "Offer Letter",
+    bank_passbook: "Bank Passbook",
+    statement_of_purpose: "Statement of Purpose",
+    cv: "CV/Resume",
+  };
+  return labels[docType] || docType.replace(/_/g, " ");
+}
+
 export default function ApplicationValidationPage() {
   const [applications, setApplications] = useState<ApiApplication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -96,7 +176,9 @@ export default function ApplicationValidationPage() {
   const [viewDocsError, setViewDocsError] = useState<string | null>(null);
   const [selectedDocType, setSelectedDocType] = useState<string>("form16");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [verificationError, setVerificationError] = useState<string | null>(
+    null
+  );
   const [verificationResults, setVerificationResults] = useState<any>(null);
   const [verificationProgress, setVerificationProgress] = useState<{
     current: number;
@@ -224,7 +306,7 @@ export default function ApplicationValidationPage() {
                       ...(token ? { Authorization: `Bearer ${token}` } : {}),
                     },
                     body: JSON.stringify({}),
-                  },
+                  }
                 );
 
                 if (!response.ok) {
@@ -235,7 +317,7 @@ export default function ApplicationValidationPage() {
                   throw new Error(
                     data.message ||
                       data.detail ||
-                      "Unable to verify documents. Please try again.",
+                      "Unable to verify documents. Please try again."
                   );
                 }
 
@@ -417,13 +499,47 @@ export default function ApplicationValidationPage() {
                       Step {application.current_step}
                     </td>
                     <td className="px-5 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-medium ${statusStyles(
-                          application.application_status
-                        )}`}
-                      >
-                        {application.application_status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-medium ${statusStyles(
+                            application.application_status
+                          )}`}
+                        >
+                          {application.application_status}
+                        </span>
+                        {(() => {
+                          const validationData = parseValidationResult(
+                            application.validation_result
+                          );
+                          if (validationData) {
+                            return (
+                              <span
+                                className={`inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] ${
+                                  validationData.overall_eligible
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : validationData.overall_success
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-rose-100 text-rose-700"
+                                }`}
+                                title={
+                                  validationData.overall_eligible
+                                    ? "All documents verified & eligible"
+                                    : validationData.overall_success
+                                    ? "Requires manual review"
+                                    : "Verification issues found"
+                                }
+                              >
+                                {validationData.overall_eligible
+                                  ? "✓"
+                                  : validationData.overall_success
+                                  ? "?"
+                                  : "✗"}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-xs">
                       {application.submitted_at
@@ -446,7 +562,7 @@ export default function ApplicationValidationPage() {
           )}
         </div>
       </div>
-      
+
       {verificationError && (
         <div className="rounded-3xl bg-rose-950/40 border border-rose-500/40 backdrop-blur-xl shadow-xl p-6">
           <div className="flex items-start gap-3">
@@ -477,7 +593,8 @@ export default function ApplicationValidationPage() {
                   Batch Verification Results
                 </h3>
                 <p className="text-sm text-emerald-100">
-                  {verificationResults.total_applications} applications processed
+                  {verificationResults.total_applications} applications
+                  processed
                 </p>
               </div>
               <button
@@ -585,7 +702,7 @@ export default function ApplicationValidationPage() {
                           </button>
                         </td>
                       </tr>
-                    ),
+                    )
                   )}
                 </tbody>
               </table>
@@ -730,108 +847,286 @@ export default function ApplicationValidationPage() {
                   </div>
                 </div>
               </section>
-              
-              {verificationResults &&
-                verificationResults.results &&
-                verificationResults.results[selectedApplication.application_id] && (
-                <section className="space-y-3 mb-4">
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Verification Results
-                  </h3>
-                  <div className="space-y-2 text-xs">
-                    {verificationResults.results[selectedApplication.application_id]
-                      .verification_results && (
-                      <div className="space-y-2">
-                        {Object.entries(
-                          verificationResults.results[
-                            selectedApplication.application_id
-                          ].verification_results,
-                        ).map(([docType, result]: [string, any]) => (
-                            <div
-                              key={docType}
-                              className={`p-3 rounded-lg border ${
-                                result.success
-                                  ? result.is_eligible === true
-                                    ? "bg-emerald-50 border-emerald-200"
-                                    : result.is_eligible === false
-                                    ? "bg-amber-50 border-amber-200"
-                                    : "bg-blue-50 border-blue-200"
-                                  : "bg-rose-50 border-rose-200"
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1">
-                                  <p className="font-medium text-slate-900 capitalize">
-                                    {docType.replace(/_/g, " ")}
-                                  </p>
-                                  <p
-                                    className={`text-xs mt-1 ${
-                                      result.success
-                                        ? result.is_eligible === true
-                                          ? "text-emerald-700"
-                                          : result.is_eligible === false
-                                          ? "text-amber-700"
-                                          : "text-blue-700"
-                                        : "text-rose-700"
-                                    }`}
-                                  >
-                                    {result.message || "No message"}
-                                  </p>
-                                  {result.data && (
-                                    <div className="mt-2 text-xs text-slate-600">
-                                      {result.data.gross_income_numeric && (
-                                        <p>Income: ₹{result.data.gross_income_numeric.toLocaleString()}</p>
+
+              {(() => {
+                const validationData = parseValidationResult(
+                  selectedApplication.validation_result
+                );
+                const batchVerificationData =
+                  verificationResults?.results?.[
+                    selectedApplication.application_id
+                  ];
+
+                // Prioritize batch verification data if available, otherwise use validation_result
+                const displayData = batchVerificationData || validationData;
+
+                if (!displayData) return null;
+
+                return (
+                  <section className="md:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        📋 Document Verification Results
+                      </h3>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${
+                          displayData.overall_eligible
+                            ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
+                            : displayData.overall_success
+                            ? "bg-amber-100 text-amber-700 border border-amber-300"
+                            : "bg-rose-100 text-rose-700 border border-rose-300"
+                        }`}
+                      >
+                        {displayData.overall_eligible ? (
+                          <>
+                            <span className="text-sm">✓</span>
+                            All Verified & Eligible
+                          </>
+                        ) : displayData.overall_success ? (
+                          <>
+                            <span className="text-sm">⚠</span>
+                            Manual Review Required
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-sm">✗</span>
+                            Issues Found
+                          </>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      {Object.entries(
+                        displayData.verification_results || {}
+                      ).map(([docType, result]: [string, any]) => (
+                        <div
+                          key={docType}
+                          className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-md ${
+                            result.success && result.is_eligible === true
+                              ? "border-emerald-300 bg-emerald-50/50"
+                              : result.success && result.is_eligible === false
+                              ? "border-amber-300 bg-amber-50/50"
+                              : result.success && result.is_eligible === null
+                              ? "border-blue-300 bg-blue-50/50"
+                              : "border-rose-300 bg-rose-50/50"
+                          }`}
+                        >
+                          <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs font-semibold text-slate-900">
+                                {getDocumentTypeLabel(docType)}
+                              </h4>
+                              <span
+                                className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                                  result.success && result.is_eligible === true
+                                    ? "text-emerald-700"
+                                    : result.success &&
+                                      result.is_eligible === false
+                                    ? "text-amber-700"
+                                    : result.success &&
+                                      result.is_eligible === null
+                                    ? "text-blue-700"
+                                    : "text-rose-700"
+                                }`}
+                              >
+                                {result.success && result.is_eligible === true
+                                  ? "✓ ELIGIBLE"
+                                  : result.success &&
+                                    result.is_eligible === false
+                                  ? "✗ NOT ELIGIBLE"
+                                  : result.success &&
+                                    result.is_eligible === null
+                                  ? "? REVIEW"
+                                  : "✗ FAILED"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="px-4 py-3 space-y-2">
+                            <p className="text-xs text-slate-700 leading-relaxed">
+                              {result.message ||
+                                "No verification message available"}
+                            </p>
+
+                            {result.data && (
+                              <div className="mt-3 pt-3 border-t border-slate-200 space-y-1.5">
+                                {result.data.gross_income_numeric !==
+                                  undefined && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Gross Income
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      ₹
+                                      {result.data.gross_income_numeric.toLocaleString(
+                                        "en-IN"
                                       )}
-                                      {result.data.percentage_numeric && (
-                                        <p>Percentage: {result.data.percentage_numeric.toFixed(2)}%</p>
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.income_limit !== undefined && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Income Limit
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      ₹
+                                      {result.data.income_limit.toLocaleString(
+                                        "en-IN"
                                       )}
-                                      {result.data.category && (
-                                        <p>Category: {result.data.category}</p>
-                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.percentage !== undefined &&
+                                  result.data.percentage !== null && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        Percentage
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {typeof result.data.percentage ===
+                                        "number"
+                                          ? `${result.data.percentage.toFixed(
+                                              2
+                                            )}%`
+                                          : result.data.percentage}
+                                      </span>
                                     </div>
                                   )}
-                                </div>
-                                <span
-                                  className={`text-xs font-medium ${
-                                    result.success
-                                      ? result.is_eligible === true
-                                        ? "text-emerald-700"
-                                        : result.is_eligible === false
-                                        ? "text-amber-700"
-                                        : "text-blue-700"
-                                      : "text-rose-700"
-                                  }`}
-                                >
-                                  {result.success
-                                    ? result.is_eligible === true
-                                      ? "✓ Eligible"
-                                      : result.is_eligible === false
-                                      ? "✗ Not Eligible"
-                                      : "? Manual Review"
-                                    : "✗ Failed"}
-                                </span>
+                                {result.data.percentage_numeric !== undefined &&
+                                  result.data.percentage_numeric !== null && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        Percentage
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {result.data.percentage_numeric.toFixed(
+                                          2
+                                        )}
+                                        %
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.cgpa !== undefined &&
+                                  result.data.cgpa !== null && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        CGPA
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {result.data.cgpa}
+                                        {result.data.cgpa_scale &&
+                                          ` / ${result.data.cgpa_scale}`}
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.category && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Category
+                                    </span>
+                                    <span className="font-semibold text-slate-900 uppercase">
+                                      {result.data.category}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.extracted_caste &&
+                                  result.data.extracted_caste !==
+                                    "Not Available" && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        Extracted Caste
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {result.data.extracted_caste}
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.extracted_name && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Document Name
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      {result.data.extracted_name}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.student_name && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Student Name
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      {result.data.student_name}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.year_of_passing && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Year of Passing
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      {result.data.year_of_passing}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.confidence !== undefined && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Confidence
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                        <div
+                                          className={`h-full transition-all ${
+                                            result.data.confidence >= 70
+                                              ? "bg-emerald-500"
+                                              : result.data.confidence >= 40
+                                              ? "bg-amber-500"
+                                              : "bg-rose-500"
+                                          }`}
+                                          style={{
+                                            width: `${result.data.confidence}%`,
+                                          }}
+                                        />
+                                      </div>
+                                      <span className="font-semibold text-slate-900">
+                                        {result.data.confidence}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    )}
-                    <div className="mt-3 p-2 bg-slate-100 rounded-lg">
-                      <p className="text-xs text-slate-700">
-                        <span className="font-medium">Overall Status:</span>{" "}
-                        {verificationResults.results[selectedApplication.application_id]
-                          .overall_eligible
-                          ? "All documents verified and eligible"
-                          : verificationResults.results[
-                              selectedApplication.application_id
-                            ].overall_success
-                          ? "All documents processed, some require manual review"
-                          : "Some documents failed verification"}
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div
+                      className={`rounded-xl px-4 py-3 border ${
+                        displayData.overall_eligible
+                          ? "bg-emerald-50 border-emerald-300"
+                          : displayData.overall_success
+                          ? "bg-amber-50 border-amber-300"
+                          : "bg-rose-50 border-rose-300"
+                      }`}
+                    >
+                      <p className="text-xs font-medium text-slate-700">
+                        <span className="font-semibold">Overall Status: </span>
+                        {displayData.overall_eligible
+                          ? "✓ All documents verified and applicant is eligible for the scholarship"
+                          : displayData.overall_success
+                          ? "⚠ Documents processed successfully but manual review required for eligibility"
+                          : "✗ Some documents failed verification or applicant is not eligible"}
                       </p>
                     </div>
-                  </div>
-                </section>
-              )}
+                  </section>
+                );
+              })()}
 
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
