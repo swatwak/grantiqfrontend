@@ -16,7 +16,6 @@ const navItems = [
   {
     label: "Scrutiny",
     href: "/dashboard/scrutiny",
-    disabled: true,
   },
   {
     label: "Recommendation",
