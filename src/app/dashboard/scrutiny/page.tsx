@@ -91,7 +91,7 @@ function getCategoryFromApplication(application: ApiApplication): CategoryType {
     return "ST";
   }
   if (application.caste_validity_cert_number) {
-    return "SC";
+    return "SC"; 
   }
   // You may need to add logic to detect Minority based on your data model
   // For now, defaulting to "Open" if no category is explicitly set
