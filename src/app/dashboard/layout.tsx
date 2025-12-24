@@ -20,7 +20,7 @@ const navItems = [
   {
     label: "Recommendation",
     href: "/dashboard/recommendation",
-    disabled: true,
+    disabled: false,
   },
 ];
 
