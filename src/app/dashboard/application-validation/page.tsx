@@ -68,23 +68,23 @@ const API_BASE_URL =
 function statusStyles(status: ApiApplicationStatus) {
   const normalized = status.toLowerCase();
 
-  if (normalized === "draft" || normalized === "pending") {
-    return "bg-amber-500/15 text-amber-300 border border-amber-400/40";
+  if (normalized === "in_progress") {
+    return "bg-blue-500/15 text-blue-600 border border-blue-400/40";
   }
 
-  if (normalized === "under_review" || normalized === "under review") {
-    return "bg-sky-500/15 text-sky-300 border border-sky-400/40";
+  if (normalized === "submitted") {
+    return "bg-amber-500/15 text-amber-600 border border-amber-400/40";
   }
 
-  if (normalized === "approved") {
-    return "bg-emerald-500/15 text-emerald-300 border border-emerald-400/40";
+  if (normalized === "verified") {
+    return "bg-emerald-500/15 text-emerald-600 border border-emerald-400/40";
   }
 
   if (normalized === "rejected") {
-    return "bg-rose-500/15 text-rose-300 border border-rose-400/40";
+    return "bg-rose-500/15 text-rose-600 border border-rose-400/40";
   }
 
-  return "bg-slate-500/15 text-slate-200 border border-slate-400/40";
+  return "bg-slate-500/15 text-slate-600 border border-slate-400/40";
 }
 
 function formatDate(value: string) {
@@ -430,10 +430,9 @@ export default function ApplicationValidationPage() {
                 className="rounded-lg bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All</option>
-                <option value="draft">Draft</option>
-                <option value="pending">Pending</option>
-                <option value="under_review">Under Review</option>
-                <option value="approved">Approved</option>
+                <option value="in_progress">In Progress</option>
+                <option value="submitted">Submitted</option>
+                <option value="verified">Verified</option>
                 <option value="rejected">Rejected</option>
               </select>
             </div>
@@ -505,7 +504,9 @@ export default function ApplicationValidationPage() {
                             application.application_status
                           )}`}
                         >
-                          {application.application_status}
+                          {application.application_status
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
                         </span>
                         {(() => {
                           const validationData = parseValidationResult(

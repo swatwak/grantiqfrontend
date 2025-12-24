@@ -132,7 +132,7 @@ export default function ScrutinyPage() {
             : null;
 
         const response = await fetch(
-          `${API_BASE_URL}/api/grantor/applications/all`,
+          `${API_BASE_URL}/api/grantor/applications/all?status=verified`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -813,4 +813,3 @@ export default function ScrutinyPage() {
     </div>
   );
 }
-
