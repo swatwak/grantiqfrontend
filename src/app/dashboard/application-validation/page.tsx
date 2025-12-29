@@ -492,7 +492,8 @@ export default function ApplicationValidationPage() {
                       {application.full_name || "—"}
                     </td>
                     <td className="px-5 py-3 text-slate-600 font-mono text-[13px]">
-                      {application.application_id}
+                      {/* Application ID capitalize last 4 characters */}
+                      {application.application_id.slice(-6).toUpperCase()}
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-xs">
                       Step {application.current_step}
@@ -1072,32 +1073,6 @@ export default function ApplicationValidationPage() {
                                     <span className="font-semibold text-slate-900">
                                       {result.data.year_of_passing}
                                     </span>
-                                  </div>
-                                )}
-                                {result.data.confidence !== undefined && (
-                                  <div className="flex justify-between items-center text-[11px]">
-                                    <span className="text-slate-500 font-medium">
-                                      Confidence
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                        <div
-                                          className={`h-full transition-all ${
-                                            result.data.confidence >= 70
-                                              ? "bg-emerald-500"
-                                              : result.data.confidence >= 40
-                                              ? "bg-amber-500"
-                                              : "bg-rose-500"
-                                          }`}
-                                          style={{
-                                            width: `${result.data.confidence}%`,
-                                          }}
-                                        />
-                                      </div>
-                                      <span className="font-semibold text-slate-900">
-                                        {result.data.confidence}%
-                                      </span>
-                                    </div>
                                   </div>
                                 )}
                               </div>
