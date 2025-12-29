@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
+import Image from "next/image";
 
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -50,7 +51,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
+          <Image
+            src="/logo_dark.png"
+            alt="GrantIQ Logo"
+            width={120}
+            height={36}
+          />
+          {/* <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
             <span className="text-sm font-semibold text-white">IQ</span>
           </div>
           <div>
@@ -58,7 +65,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <p className="text-[11px] text-slate-600">
               Smart Scholarship Management Platform
             </p>
-          </div>
+          </div> */}
         </div>
 
         <div className="relative flex items-center gap-4">

@@ -344,7 +344,7 @@ export default function ScrutinyPage() {
                       {application.full_name || "—"}
                     </td>
                     <td className="px-5 py-3 text-slate-600 font-mono text-[13px]">
-                      {application.application_id}
+                      {application.application_id.slice(-6).toUpperCase()}
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-xs">
                       <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
@@ -551,11 +551,14 @@ export default function ScrutinyPage() {
                 <section className="md:col-span-2 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-slate-900">
-                    Recommendation Details
+                      Recommendation Details
                     </h3>
                     <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold bg-purple-100 text-purple-700 border border-purple-300">
                       <span className="text-sm">📊</span>
-                      Rank #{selectedApplication.recommendation_details.finalRank || selectedApplication.finalRank || "—"}
+                      Rank #
+                      {selectedApplication.recommendation_details.finalRank ||
+                        selectedApplication.finalRank ||
+                        "—"}
                     </span>
                   </div>
 
@@ -568,13 +571,15 @@ export default function ScrutinyPage() {
                             Category
                           </h4>
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700">
-                            {selectedApplication.recommendation_details.category || "—"}
+                            {selectedApplication.recommendation_details
+                              .category || "—"}
                           </span>
                         </div>
                       </div>
                       <div className="px-4 py-3 space-y-2">
                         <p className="text-xs text-slate-700 leading-relaxed">
-                          Applicant&apos;s category classification for scholarship eligibility.
+                          Applicant&apos;s category classification for
+                          scholarship eligibility.
                         </p>
                       </div>
                     </div>
@@ -587,13 +592,16 @@ export default function ScrutinyPage() {
                             Course Level Priority
                           </h4>
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700">
-                            Priority {selectedApplication.recommendation_details.courseLevelPriority ?? "—"}
+                            Priority{" "}
+                            {selectedApplication.recommendation_details
+                              .courseLevelPriority ?? "—"}
                           </span>
                         </div>
                       </div>
                       <div className="px-4 py-3 space-y-2">
                         <p className="text-xs text-slate-700 leading-relaxed">
-                          Priority level based on course type (PhD &gt; Masters &gt; Bachelors).
+                          Priority level based on course type (PhD &gt; Masters
+                          &gt; Bachelors).
                         </p>
                       </div>
                     </div>
@@ -606,7 +614,9 @@ export default function ScrutinyPage() {
                             University Ranking
                           </h4>
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700">
-                            #{selectedApplication.recommendation_details.universityRanking ?? "—"}
+                            #
+                            {selectedApplication.recommendation_details
+                              .universityRanking ?? "—"}
                           </span>
                         </div>
                       </div>
@@ -625,34 +635,46 @@ export default function ScrutinyPage() {
                             Days Until Course Start
                           </h4>
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700">
-                            {selectedApplication.recommendation_details.daysUntilCourseStart ?? "—"} days
+                            {selectedApplication.recommendation_details
+                              .daysUntilCourseStart ?? "—"}{" "}
+                            days
                           </span>
                         </div>
                       </div>
                       <div className="px-4 py-3 space-y-2">
                         <p className="text-xs text-slate-700 leading-relaxed">
-                          Time remaining before the course begins. Earlier starts may get priority.
+                          Time remaining before the course begins. Earlier
+                          starts may get priority.
                         </p>
                       </div>
                     </div>
 
                     {/* First Time Beneficiary */}
-                    <div className={`rounded-xl border-2 overflow-hidden ${
-                      selectedApplication.recommendation_details.isFirstTimeBeneficiary
-                        ? "border-emerald-300 bg-emerald-50/50"
-                        : "border-slate-300 bg-slate-50/50"
-                    }`}>
+                    <div
+                      className={`rounded-xl border-2 overflow-hidden ${
+                        selectedApplication.recommendation_details
+                          .isFirstTimeBeneficiary
+                          ? "border-emerald-300 bg-emerald-50/50"
+                          : "border-slate-300 bg-slate-50/50"
+                      }`}
+                    >
                       <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
                         <div className="flex items-center justify-between">
                           <h4 className="text-xs font-semibold text-slate-900">
                             First Time Beneficiary
                           </h4>
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold ${
-                            selectedApplication.recommendation_details.isFirstTimeBeneficiary
-                              ? "text-emerald-700"
-                              : "text-slate-700"
-                          }`}>
-                            {selectedApplication.recommendation_details.isFirstTimeBeneficiary ? "✓ Yes" : "✗ No"}
+                          <span
+                            className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                              selectedApplication.recommendation_details
+                                .isFirstTimeBeneficiary
+                                ? "text-emerald-700"
+                                : "text-slate-700"
+                            }`}
+                          >
+                            {selectedApplication.recommendation_details
+                              .isFirstTimeBeneficiary
+                              ? "✓ Yes"
+                              : "✗ No"}
                           </span>
                         </div>
                       </div>
@@ -671,13 +693,17 @@ export default function ScrutinyPage() {
                             Annual Family Income
                           </h4>
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-teal-700">
-                            ₹{selectedApplication.recommendation_details.annualFamilyIncome?.toLocaleString("en-IN") ?? "—"}
+                            ₹
+                            {selectedApplication.recommendation_details.annualFamilyIncome?.toLocaleString(
+                              "en-IN"
+                            ) ?? "—"}
                           </span>
                         </div>
                       </div>
                       <div className="px-4 py-3 space-y-2">
                         <p className="text-xs text-slate-700 leading-relaxed">
-                          Total annual income of the applicant&apos;s family. Lower income may receive higher priority.
+                          Total annual income of the applicant&apos;s family.
+                          Lower income may receive higher priority.
                         </p>
                       </div>
                     </div>
@@ -690,15 +716,19 @@ export default function ScrutinyPage() {
                             Qualifying Degree Percentage
                           </h4>
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700">
-                            {selectedApplication.recommendation_details.qualifyingDegreePercentage != null
-                              ? `${selectedApplication.recommendation_details.qualifyingDegreePercentage.toFixed(2)}%`
+                            {selectedApplication.recommendation_details
+                              .qualifyingDegreePercentage != null
+                              ? `${selectedApplication.recommendation_details.qualifyingDegreePercentage.toFixed(
+                                  2
+                                )}%`
                               : "—"}
                           </span>
                         </div>
                       </div>
                       <div className="px-4 py-3 space-y-2">
                         <p className="text-xs text-slate-700 leading-relaxed">
-                          Percentage scored in the qualifying degree examination.
+                          Percentage scored in the qualifying degree
+                          examination.
                         </p>
                       </div>
                     </div>
@@ -711,15 +741,20 @@ export default function ScrutinyPage() {
                             Application Submitted On
                           </h4>
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700">
-                            {selectedApplication.recommendation_details.applicationSubmittedOn
-                              ? formatDate(selectedApplication.recommendation_details.applicationSubmittedOn)
+                            {selectedApplication.recommendation_details
+                              .applicationSubmittedOn
+                              ? formatDate(
+                                  selectedApplication.recommendation_details
+                                    .applicationSubmittedOn
+                                )
                               : "—"}
                           </span>
                         </div>
                       </div>
                       <div className="px-4 py-3 space-y-2">
                         <p className="text-xs text-slate-700 leading-relaxed">
-                          Date when the application was submitted. Earlier submissions may be prioritized.
+                          Date when the application was submitted. Earlier
+                          submissions may be prioritized.
                         </p>
                       </div>
                     </div>
@@ -728,7 +763,15 @@ export default function ScrutinyPage() {
                   <div className="rounded-xl px-4 py-3 border bg-purple-50 border-purple-300">
                     <p className="text-xs font-medium text-slate-700">
                       <span className="font-semibold">Final Ranking: </span>
-                      This applicant is ranked <span className="font-bold text-purple-700">#{selectedApplication.recommendation_details.finalRank || selectedApplication.finalRank || "—"}</span> based on the weighted scoring of all recommendation factors above.
+                      This applicant is ranked{" "}
+                      <span className="font-bold text-purple-700">
+                        #
+                        {selectedApplication.recommendation_details.finalRank ||
+                          selectedApplication.finalRank ||
+                          "—"}
+                      </span>{" "}
+                      based on the weighted scoring of all recommendation
+                      factors above.
                     </p>
                   </div>
                 </section>

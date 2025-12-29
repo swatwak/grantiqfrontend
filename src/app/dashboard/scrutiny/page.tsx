@@ -92,7 +92,7 @@ function getCategoryFromApplication(application: ApiApplication): CategoryType {
     return "ST";
   }
   if (application.caste_validity_cert_number) {
-    return "SC"; 
+    return "SC";
   }
   // You may need to add logic to detect Minority based on your data model
   // For now, defaulting to "Open" if no category is explicitly set
@@ -121,8 +121,11 @@ export default function ScrutinyPage() {
   const [isViewDocsLoading, setIsViewDocsLoading] = useState(false);
   const [viewDocsError, setViewDocsError] = useState<string | null>(null);
   const [selectedDocType, setSelectedDocType] = useState<string>("form16");
-  const [isGeneratingRecommendation, setIsGeneratingRecommendation] = useState(false);
-  const [recommendationError, setRecommendationError] = useState<string | null>(null);
+  const [isGeneratingRecommendation, setIsGeneratingRecommendation] =
+    useState(false);
+  const [recommendationError, setRecommendationError] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     async function loadApplications() {
@@ -522,7 +525,7 @@ export default function ScrutinyPage() {
                       {application.full_name || "—"}
                     </td>
                     <td className="px-5 py-3 text-slate-600 font-mono text-[13px]">
-                      {application.application_id}
+                      {application.application_id.slice(-6).toUpperCase()}
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-xs">
                       <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
