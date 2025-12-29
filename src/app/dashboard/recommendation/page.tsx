@@ -322,7 +322,6 @@ export default function ScrutinyPage() {
                   <th className="px-5 py-3 font-semibold">Applicant Name</th>
                   <th className="px-5 py-3 font-semibold">Application ID</th>
                   <th className="px-5 py-3 font-semibold">Category</th>
-                  <th className="px-5 py-3 font-semibold">Merit Score</th>
                   <th className="px-5 py-3 font-semibold">Submitted At</th>
                   <th className="px-5 py-3 font-semibold text-right">
                     Actions
@@ -350,19 +349,6 @@ export default function ScrutinyPage() {
                       <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
                         {getCategoryFromApplication(application)}
                       </span>
-                    </td>
-                    <td className="px-5 py-3">
-                      {application.merit_score !== null &&
-                      application.merit_score !== undefined ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-900 font-semibold">
-                            {application.merit_score}
-                          </span>
-                          <span className="text-slate-500 text-xs">/100</span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 text-xs">—</span>
-                      )}
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-xs">
                       {application.submitted_at
