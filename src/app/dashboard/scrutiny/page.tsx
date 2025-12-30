@@ -5,6 +5,24 @@ import { useRouter } from "next/navigation";
 
 type ApiApplicationStatus = string;
 
+type VerificationResult = {
+  success: boolean;
+  message: string;
+  data: any;
+  is_eligible: boolean | null;
+};
+
+type ValidationResultData = {
+  success: boolean;
+  message: string;
+  application_id: string;
+  verification_results: {
+    [docType: string]: VerificationResult;
+  };
+  overall_success: boolean;
+  overall_eligible: boolean;
+};
+
 type ApiApplication = {
   id: number;
   application_id: string;
@@ -38,6 +56,7 @@ type ApiApplication = {
   updated_at: string;
   merit_score?: number | null;
   category?: string | null;
+  validation_result: string | null;
 };
 
 type ApiResponse = {
@@ -84,6 +103,53 @@ function formatDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function parseValidationResult(
+  validationResultStr: string | null
+): ValidationResultData | null {
+  if (!validationResultStr) return null;
+
+  try {
+    return JSON.parse(validationResultStr) as ValidationResultData;
+  } catch {
+    try {
+      const jsCode = validationResultStr
+        .replace(/\bTrue\b/g, "true")
+        .replace(/\bFalse\b/g, "false")
+        .replace(/\bNone\b/g, "null");
+
+      const result = new Function(`return ${jsCode}`)();
+      return JSON.parse(JSON.stringify(result)) as ValidationResultData;
+    } catch (error) {
+      console.error("Failed to parse validation_result:", error);
+      try {
+        const jsonStr = validationResultStr
+          .replace(/\bTrue\b/g, "true")
+          .replace(/\bFalse\b/g, "false")
+          .replace(/\bNone\b/g, "null")
+          .replace(/'/g, '"');
+        return JSON.parse(jsonStr) as ValidationResultData;
+      } catch {
+        return null;
+      }
+    }
+  }
+}
+
+function getDocumentTypeLabel(docType: string): string {
+  const labels: { [key: string]: string } = {
+    form16: "Form 16 (Income)",
+    caste_certificate: "Caste Certificate",
+    marksheet_10th: "10th Marksheet",
+    marksheet_12th: "12th Marksheet",
+    marksheet_graduation: "Graduation Marksheet",
+    offer_letter: "Offer Letter",
+    bank_passbook: "Bank Passbook",
+    statement_of_purpose: "Statement of Purpose",
+    cv: "CV/Resume",
+  };
+  return labels[docType] || docType.replace(/_/g, " ");
 }
 
 function getCategoryFromApplication(application: ApiApplication): CategoryType {
@@ -231,7 +297,7 @@ export default function ScrutinyPage() {
     });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6 h-[calc(100vh-7rem)] overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
@@ -474,7 +540,7 @@ export default function ScrutinyPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
+        <div className="overflow-x-auto overflow-y-auto max-h-[45vh]">
           {error ? (
             <div className="px-5 py-6 text-sm text-rose-600 bg-rose-50">
               {error}
@@ -491,7 +557,7 @@ export default function ScrutinyPage() {
                   <th className="px-5 py-3 font-semibold">Applicant Name</th>
                   <th className="px-5 py-3 font-semibold">Application ID</th>
                   <th className="px-5 py-3 font-semibold">Category</th>
-                  <th className="px-5 py-3 font-semibold">Merit Score</th>
+                  {/* <th className="px-5 py-3 font-semibold">Merit Score</th> */}
                   <th className="px-5 py-3 font-semibold">
                     <button
                       type="button"
@@ -532,7 +598,7 @@ export default function ScrutinyPage() {
                         {getCategoryFromApplication(application)}
                       </span>
                     </td>
-                    <td className="px-5 py-3">
+                    {/* <td className="px-5 py-3">
                       {application.merit_score !== null &&
                       application.merit_score !== undefined ? (
                         <div className="flex items-center gap-2">
@@ -544,7 +610,7 @@ export default function ScrutinyPage() {
                       ) : (
                         <span className="text-slate-400 text-xs">—</span>
                       )}
-                    </td>
+                    </td> */}
                     <td className="px-5 py-3 text-slate-600 text-xs">
                       {application.submitted_at
                         ? formatDate(application.submitted_at)
@@ -727,6 +793,253 @@ export default function ScrutinyPage() {
                   </div>
                 </div>
               </section>
+
+              {(() => {
+                const validationData = parseValidationResult(
+                  selectedApplication.validation_result
+                );
+
+                if (!validationData) return null;
+
+                return (
+                  <section className="md:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        📋 Document Verification Results
+                      </h3>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${
+                          validationData.overall_eligible
+                            ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
+                            : validationData.overall_success
+                            ? "bg-amber-100 text-amber-700 border border-amber-300"
+                            : "bg-rose-100 text-rose-700 border border-rose-300"
+                        }`}
+                      >
+                        {validationData.overall_eligible ? (
+                          <>
+                            <span className="text-sm">✓</span>
+                            All Verified & Eligible
+                          </>
+                        ) : validationData.overall_success ? (
+                          <>
+                            <span className="text-sm">⚠</span>
+                            Manual Review Required
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-sm">✗</span>
+                            Issues Found
+                          </>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      {Object.entries(
+                        validationData.verification_results || {}
+                      ).map(([docType, result]: [string, any]) => (
+                        <div
+                          key={docType}
+                          className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-md ${
+                            result.success && result.is_eligible === true
+                              ? "border-emerald-300 bg-emerald-50/50"
+                              : result.success && result.is_eligible === false
+                              ? "border-amber-300 bg-amber-50/50"
+                              : result.success && result.is_eligible === null
+                              ? "border-blue-300 bg-blue-50/50"
+                              : "border-rose-300 bg-rose-50/50"
+                          }`}
+                        >
+                          <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs font-semibold text-slate-900">
+                                {getDocumentTypeLabel(docType)}
+                              </h4>
+                              <span
+                                className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                                  result.success && result.is_eligible === true
+                                    ? "text-emerald-700"
+                                    : result.success &&
+                                      result.is_eligible === false
+                                    ? "text-amber-700"
+                                    : result.success &&
+                                      result.is_eligible === null
+                                    ? "text-blue-700"
+                                    : "text-rose-700"
+                                }`}
+                              >
+                                {result.success && result.is_eligible === true
+                                  ? "✓ ELIGIBLE"
+                                  : result.success &&
+                                    result.is_eligible === false
+                                  ? "✗ NOT ELIGIBLE"
+                                  : result.success &&
+                                    result.is_eligible === null
+                                  ? "? REVIEW"
+                                  : "✗ FAILED"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="px-4 py-3 space-y-2">
+                            <p className="text-xs text-slate-700 leading-relaxed">
+                              {result.message ||
+                                "No verification message available"}
+                            </p>
+
+                            {result.data && (
+                              <div className="mt-3 pt-3 border-t border-slate-200 space-y-1.5">
+                                {result.data.gross_income_numeric !==
+                                  undefined && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Gross Income
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      ₹
+                                      {result.data.gross_income_numeric.toLocaleString(
+                                        "en-IN"
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.income_limit !== undefined && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Income Limit
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      ₹
+                                      {result.data.income_limit.toLocaleString(
+                                        "en-IN"
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.percentage !== undefined &&
+                                  result.data.percentage !== null && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        Percentage
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {typeof result.data.percentage ===
+                                        "number"
+                                          ? `${result.data.percentage.toFixed(
+                                              2
+                                            )}%`
+                                          : result.data.percentage}
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.percentage_numeric !== undefined &&
+                                  result.data.percentage_numeric !== null && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        Percentage
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {result.data.percentage_numeric.toFixed(
+                                          2
+                                        )}
+                                        %
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.cgpa !== undefined &&
+                                  result.data.cgpa !== null && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        CGPA
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {result.data.cgpa}
+                                        {result.data.cgpa_scale &&
+                                          ` / ${result.data.cgpa_scale}`}
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.category && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Category
+                                    </span>
+                                    <span className="font-semibold text-slate-900 uppercase">
+                                      {result.data.category}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.extracted_caste &&
+                                  result.data.extracted_caste !==
+                                    "Not Available" && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        Extracted Caste
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {result.data.extracted_caste}
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.extracted_name && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Document Name
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      {result.data.extracted_name}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.student_name && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Student Name
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      {result.data.student_name}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.year_of_passing && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Year of Passing
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      {result.data.year_of_passing}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div
+                      className={`rounded-xl px-4 py-3 border ${
+                        validationData.overall_eligible
+                          ? "bg-emerald-50 border-emerald-300"
+                          : validationData.overall_success
+                          ? "bg-amber-50 border-amber-300"
+                          : "bg-rose-50 border-rose-300"
+                      }`}
+                    >
+                      <p className="text-xs font-medium text-slate-700">
+                        <span className="font-semibold">Overall Status: </span>
+                        {validationData.overall_eligible
+                          ? "✓ All documents verified and applicant is eligible for the scholarship"
+                          : validationData.overall_success
+                          ? "⚠ Documents processed successfully but manual review required for eligibility"
+                          : "✗ Some documents failed verification or applicant is not eligible"}
+                      </p>
+                    </div>
+                  </section>
+                );
+              })()}
 
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
