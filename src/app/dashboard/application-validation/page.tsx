@@ -84,6 +84,10 @@ function statusStyles(status: ApiApplicationStatus) {
     return "bg-rose-500/15 text-rose-600 border border-rose-400/40";
   }
 
+  if (normalized === "validation_in_progress") {
+    return "bg-yellow-500/15 text-yellow-600 border border-yellow-400/40";
+  }
+
   return "bg-slate-500/15 text-slate-600 border border-slate-400/40";
 }
 
@@ -278,12 +282,6 @@ export default function ApplicationValidationPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex flex-col items-end text-xs text-slate-600">
-            <span>Step 1 of 3</span>
-            <span className="text-slate-500">
-              Validation → Scrutiny → Recommendation
-            </span>
-          </div>
           <button
             type="button"
             onClick={async () => {
@@ -317,7 +315,7 @@ export default function ApplicationValidationPage() {
                   throw new Error(
                     data.message ||
                       data.detail ||
-                      "Unable to verify documents. Please try again."
+                      "Unable to start verification. Please try again."
                   );
                 }
 
@@ -328,15 +326,24 @@ export default function ApplicationValidationPage() {
                 };
 
                 if (!data.success) {
-                  throw new Error(data.message || "Verification failed");
+                  throw new Error(
+                    data.message || "Failed to start verification"
+                  );
                 }
 
-                setVerificationResults(data.data);
+                setVerificationResults({
+                  ...data.data,
+                  backgroundProcessing: true,
+                  successMessage: data.message,
+                });
+                // setTimeout(() => {
+                //   window.location.reload();
+                // }, 1500);
               } catch (err) {
                 const message =
                   err instanceof Error
                     ? err.message
-                    : "Something went wrong while verifying documents.";
+                    : "Something went wrong while starting verification.";
                 setVerificationError(message);
               } finally {
                 setIsVerifying(false);
@@ -381,33 +388,11 @@ export default function ApplicationValidationPage() {
               </>
             )}
           </button>
-          <div className="h-10 rounded-lg bg-blue-50 border border-blue-200 px-4 flex items-center gap-2 text-xs text-blue-900">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white text-[11px] font-semibold">
-              1
-            </span>
-            <span className="font-medium">Validation Stage</span>
-          </div>
         </div>
       </div>
 
       <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
-          <div className="flex items-center gap-3">
-            <span className="h-8 w-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-base">
-              🔍
-            </span>
-            <div>
-              <p className="text-sm font-medium text-slate-900">
-                Validation Queue
-              </p>
-              <p className="text-xs text-slate-600">
-                {isLoading
-                  ? "Loading applications..."
-                  : `${filteredAndSortedApplications.length} applications in queue`}
-              </p>
-            </div>
-          </div>
-
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-slate-600 w-full sm:w-auto">
             <div className="flex-1">
               <input
@@ -455,10 +440,11 @@ export default function ApplicationValidationPage() {
                 <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600 border-b border-slate-200">
                   <th className="px-5 py-3 font-semibold">Applicant Name</th>
                   <th className="px-5 py-3 font-semibold">Application ID</th>
-                  <th className="px-5 py-3 font-semibold">Current Step</th>
                   <th className="px-5 py-3 font-semibold">
                     Application Status
                   </th>
+                  <th className="px-5 py-3 font-semibold">Current Step</th>
+
                   <th className="px-5 py-3 font-semibold">
                     <button
                       type="button"
@@ -495,9 +481,6 @@ export default function ApplicationValidationPage() {
                       {/* Application ID capitalize last 4 characters */}
                       {application.application_id.slice(-6).toUpperCase()}
                     </td>
-                    <td className="px-5 py-3 text-slate-600 text-xs">
-                      Step {application.current_step}
-                    </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <span
@@ -509,39 +492,10 @@ export default function ApplicationValidationPage() {
                             .replace(/_/g, " ")
                             .replace(/\b\w/g, (l) => l.toUpperCase())}
                         </span>
-                        {(() => {
-                          const validationData = parseValidationResult(
-                            application.validation_result
-                          );
-                          if (validationData) {
-                            return (
-                              <span
-                                className={`inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] ${
-                                  validationData.overall_eligible
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : validationData.overall_success
-                                    ? "bg-amber-100 text-amber-700"
-                                    : "bg-rose-100 text-rose-700"
-                                }`}
-                                title={
-                                  validationData.overall_eligible
-                                    ? "All documents verified & eligible"
-                                    : validationData.overall_success
-                                    ? "Requires manual review"
-                                    : "Verification issues found"
-                                }
-                              >
-                                {validationData.overall_eligible
-                                  ? "✓"
-                                  : validationData.overall_success
-                                  ? "?"
-                                  : "✗"}
-                              </span>
-                            );
-                          }
-                          return null;
-                        })()}
                       </div>
+                    </td>
+                    <td className="px-5 py-3 text-slate-600 text-xs">
+                      Step {application.current_step}
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-xs">
                       {application.submitted_at
@@ -586,133 +540,6 @@ export default function ApplicationValidationPage() {
         </div>
       )}
 
-      {verificationResults && (
-        <div className="rounded-3xl bg-slate-950/40 border border-white/10 backdrop-blur-xl shadow-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/10 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-1">
-                  Batch Verification Results
-                </h3>
-                <p className="text-sm text-emerald-100">
-                  {verificationResults.total_applications} applications
-                  processed
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setVerificationResults(null)}
-                className="text-white hover:text-emerald-100"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-          <div className="px-6 py-4 bg-slate-50">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <div className="bg-white rounded-lg p-3 border border-slate-200">
-                <p className="text-xs text-slate-500 mb-1">Total</p>
-                <p className="text-lg font-semibold text-slate-900">
-                  {verificationResults.total_applications}
-                </p>
-              </div>
-              <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
-                <p className="text-xs text-emerald-600 mb-1">Verified</p>
-                <p className="text-lg font-semibold text-emerald-700">
-                  {verificationResults.verified_applications}
-                </p>
-              </div>
-              <div className="bg-rose-50 rounded-lg p-3 border border-rose-200">
-                <p className="text-xs text-rose-600 mb-1">Failed</p>
-                <p className="text-lg font-semibold text-rose-700">
-                  {verificationResults.failed_applications}
-                </p>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                <p className="text-xs text-blue-600 mb-1">Eligible</p>
-                <p className="text-lg font-semibold text-blue-700">
-                  {verificationResults.eligible_applications}
-                </p>
-              </div>
-            </div>
-            <div className="max-h-96 overflow-y-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-100 text-left text-xs uppercase tracking-wide text-slate-600">
-                    <th className="px-4 py-2 font-medium">Application ID</th>
-                    <th className="px-4 py-2 font-medium">Status</th>
-                    <th className="px-4 py-2 font-medium">Eligible</th>
-                    <th className="px-4 py-2 font-medium">Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(verificationResults.results || {}).map(
-                    ([appId, result]: [string, any]) => (
-                      <tr
-                        key={appId}
-                        className="border-t border-slate-200 bg-white"
-                      >
-                        <td className="px-4 py-2 text-xs font-mono text-slate-700">
-                          {appId.substring(0, 8)}...
-                        </td>
-                        <td className="px-4 py-2">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-medium ${
-                              result.success
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-rose-100 text-rose-700"
-                            }`}
-                          >
-                            {result.success ? "✓ Success" : "✗ Failed"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-medium ${
-                              result.overall_eligible === true
-                                ? "bg-emerald-100 text-emerald-700"
-                                : result.overall_eligible === false
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-blue-100 text-blue-700"
-                            }`}
-                          >
-                            {result.overall_eligible === true
-                              ? "Eligible"
-                              : result.overall_eligible === false
-                              ? "Not Eligible"
-                              : "Review"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const app = applications.find(
-                                (a) => a.application_id === appId
-                              );
-                              if (app) {
-                                setSelectedApplication(app);
-                                setVerificationResults({
-                                  ...verificationResults,
-                                  selectedAppId: appId,
-                                });
-                              }
-                            }}
-                            className="text-xs text-sky-600 hover:text-sky-700"
-                          >
-                            View Details
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
       {selectedApplication && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-5xl rounded-3xl bg-white border border-slate-200 shadow-2xl shadow-slate-900/30 overflow-hidden">
@@ -727,7 +554,7 @@ export default function ApplicationValidationPage() {
                 <p className="text-xs text-blue-100 mt-1">
                   ID:{" "}
                   <span className="font-mono">
-                    {selectedApplication.application_id}
+                    {selectedApplication.application_id.slice(-6).toUpperCase()}
                   </span>
                   {" · "}
                   Step {selectedApplication.current_step} · Status:{" "}

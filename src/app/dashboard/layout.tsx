@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 import Image from "next/image";
+import VerificationEvents from "@/utils/events";
 
 type DashboardLayoutProps = {
   children: ReactNode;
@@ -49,6 +50,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+      <VerificationEvents />
       <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <Image
@@ -74,10 +76,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             onClick={() => setIsUserMenuOpen((open) => !open)}
             className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 hover:bg-blue-700 text-white text-xs font-medium transition-colors"
           >
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
-              {/* simple person icon */}
+            {/* <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
               <span className="text-[13px]">👤</span>
-            </span>
+            </span> */}
             <span className="hidden sm:inline">{displayName}</span>
             <span className="text-[11px]">▾</span>
           </button>
