@@ -54,7 +54,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <Image
-            src="/logo_dark.png"
+            src="/logo_dark.svg"
             alt="GrantIQ Logo"
             width={120}
             height={36}
