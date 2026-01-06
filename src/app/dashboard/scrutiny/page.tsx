@@ -807,32 +807,12 @@ export default function ScrutinyPage() {
                       <h3 className="text-sm font-semibold text-slate-900">
                         📋 Document Verification Results
                       </h3>
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${
-                          validationData.overall_eligible
-                            ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
-                            : validationData.overall_success
-                            ? "bg-amber-100 text-amber-700 border border-amber-300"
-                            : "bg-rose-100 text-rose-700 border border-rose-300"
-                        }`}
-                      >
-                        {validationData.overall_eligible ? (
-                          <>
-                            <span className="text-sm">✓</span>
-                            All Verified & Eligible
-                          </>
-                        ) : validationData.overall_success ? (
-                          <>
-                            <span className="text-sm">⚠</span>
-                            Manual Review Required
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-sm">✗</span>
-                            Issues Found
-                          </>
-                        )}
-                      </span>
+                      {validationData.overall_eligible && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-300">
+                          <span className="text-sm">✓</span>
+                          All Verified & Eligible
+                        </span>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -1019,7 +999,7 @@ export default function ScrutinyPage() {
                       ))}
                     </div>
 
-                    <div
+                    {/* <div
                       className={`rounded-xl px-4 py-3 border ${
                         validationData.overall_eligible
                           ? "bg-emerald-50 border-emerald-300"
@@ -1036,7 +1016,7 @@ export default function ScrutinyPage() {
                           ? "⚠ Documents processed successfully but manual review required for eligibility"
                           : "✗ Some documents failed verification or applicant is not eligible"}
                       </p>
-                    </div>
+                    </div> */}
                   </section>
                 );
               })()}
