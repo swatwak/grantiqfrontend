@@ -205,7 +205,7 @@ export default function ScrutinyPage() {
             : null;
 
         const response = await fetch(
-          `${API_BASE_URL}/api/grantor/applications/all?status=verified`,
+          `${API_BASE_URL}/api/grantor/applications/all?status=submitted`,
           {
             headers: {
               "Content-Type": "application/json",

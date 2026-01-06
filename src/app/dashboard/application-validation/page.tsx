@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type ApiApplicationStatus = string;
 
@@ -178,7 +179,42 @@ export default function ApplicationValidationPage() {
     current: number;
     total: number;
   } | null>(null);
-  const [actionFilter, setActionFilter] = useState<"all" | "accepted" | "rejected">("all");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get status from URL or default to "submitted"
+  const getInitialStatus = () => {
+    const status = searchParams.get("status");
+    if (status === "submitted" || status === "rejected") {
+      return status;
+    }
+    return "submitted";
+  };
+
+  const [actionFilter, setActionFilter] = useState<"submitted" | "rejected">(
+    getInitialStatus()
+  );
+
+  // Sync URL params with state on mount
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (!status) {
+      // If no status in URL, set it to default "submitted"
+      const params = new URLSearchParams();
+      params.set("status", "submitted");
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, []);
+
+  // Update URL when filter changes (but not on initial mount to avoid double update)
+  useEffect(() => {
+    const currentStatus = searchParams.get("status");
+    if (currentStatus !== actionFilter) {
+      const params = new URLSearchParams();
+      params.set("status", actionFilter);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [actionFilter, router]);
 
   useEffect(() => {
     async function loadApplications() {
@@ -193,9 +229,7 @@ export default function ApplicationValidationPage() {
 
         // Build URL with query parameter based on actionFilter
         let url = `${API_BASE_URL}/api/grantor/applications/all`;
-        if (actionFilter !== "all") {
-          url += `?status=${actionFilter}`;
-        }
+        url += `?status=${actionFilter}`;
 
         const response = await fetch(url, {
           headers: {
@@ -276,7 +310,7 @@ export default function ApplicationValidationPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={async () => {
@@ -380,7 +414,7 @@ export default function ApplicationValidationPage() {
               </>
             )}
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Accept/Reject Filter Buttons */}
@@ -398,9 +432,9 @@ export default function ApplicationValidationPage() {
         </button> */}
         <button
           type="button"
-          onClick={() => setActionFilter("accepted")}
+          onClick={() => setActionFilter("submitted")}
           className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
-            actionFilter === "accepted"
+            actionFilter === "submitted"
               ? "bg-green-600 text-white"
               : "bg-white text-green-600 border border-green-300 hover:bg-green-50"
           }`}
@@ -416,7 +450,7 @@ export default function ApplicationValidationPage() {
               : "bg-white text-rose-600 border border-rose-300 hover:bg-rose-50"
           }`}
         >
-        Rejected
+          Rejected
         </button>
       </div>
 
