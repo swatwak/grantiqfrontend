@@ -4,6 +4,16 @@ import { useEffect, useState } from "react";
 
 type ApiApplicationStatus = string;
 
+type ScoreBreakdown = {
+  universityScore: number | null;
+  academicScore: number | null;
+  courseScore: number | null;
+  incomeScore: number | null;
+  beneficiaryScore: number | null;
+  ageScore: number | null;
+  totalScore: number | null;
+};
+
 type RecommendationDetails = {
   category: string | null;
   courseLevelPriority: number | null;
@@ -14,7 +24,7 @@ type RecommendationDetails = {
   annualFamilyIncome: number | null;
   qualifyingDegreePercentage: number | null;
   finalRank: number | null;
-  totalScore: number | null;
+  scoreBreakdown: ScoreBreakdown | null;
 };
 
 type ApiApplication = {
@@ -353,8 +363,8 @@ export default function ScrutinyPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-slate-900 font-medium">
-                      {application.recommendation_details?.totalScore != null
-                        ? application.recommendation_details.totalScore.toFixed(2)
+                      {application.recommendation_details?.scoreBreakdown?.totalScore != null
+                        ? application.recommendation_details.scoreBreakdown.totalScore.toFixed(2)
                         : "—"}
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-xs">
@@ -767,6 +777,106 @@ export default function ScrutinyPage() {
                       factors above.
                     </p>
                   </div>
+
+                  {/* Score Breakdown Table */}
+                  {selectedApplication.recommendation_details.scoreBreakdown && (
+                    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                      <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+                        <h4 className="text-sm font-semibold text-slate-900">
+                          Score Breakdown
+                        </h4>
+                        <p className="text-xs text-slate-600 mt-1">
+                          Detailed breakdown of the weightage score calculation
+                        </p>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200">
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                                Score Component
+                              </th>
+                              <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                                Score
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            <tr className="hover:bg-slate-50">
+                              <td className="px-4 py-3 text-xs text-slate-700">
+                                University Score
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                {selectedApplication.recommendation_details.scoreBreakdown.universityScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.universityScore.toFixed(2)
+                                  : "—"}
+                              </td>
+                            </tr>
+                            <tr className="hover:bg-slate-50">
+                              <td className="px-4 py-3 text-xs text-slate-700">
+                                Academic Score
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                {selectedApplication.recommendation_details.scoreBreakdown.academicScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.academicScore.toFixed(2)
+                                  : "—"}
+                              </td>
+                            </tr>
+                            <tr className="hover:bg-slate-50">
+                              <td className="px-4 py-3 text-xs text-slate-700">
+                                Course Score
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                {selectedApplication.recommendation_details.scoreBreakdown.courseScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.courseScore.toFixed(2)
+                                  : "—"}
+                              </td>
+                            </tr>
+                            <tr className="hover:bg-slate-50">
+                              <td className="px-4 py-3 text-xs text-slate-700">
+                                Income Score
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                {selectedApplication.recommendation_details.scoreBreakdown.incomeScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.incomeScore.toFixed(2)
+                                  : "—"}
+                              </td>
+                            </tr>
+                            <tr className="hover:bg-slate-50">
+                              <td className="px-4 py-3 text-xs text-slate-700">
+                                Beneficiary Score
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                {selectedApplication.recommendation_details.scoreBreakdown.beneficiaryScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.beneficiaryScore.toFixed(2)
+                                  : "—"}
+                              </td>
+                            </tr>
+                            <tr className="hover:bg-slate-50">
+                              <td className="px-4 py-3 text-xs text-slate-700">
+                                Age Score
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                {selectedApplication.recommendation_details.scoreBreakdown.ageScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.ageScore.toFixed(2)
+                                  : "—"}
+                              </td>
+                            </tr>
+                            <tr className="bg-purple-50 border-t-2 border-purple-300 font-semibold">
+                              <td className="px-4 py-3 text-xs text-slate-900">
+                                Total Score
+                              </td>
+                              <td className="px-4 py-3 text-right text-xs font-bold text-purple-700">
+                                {selectedApplication.recommendation_details.scoreBreakdown.totalScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.totalScore.toFixed(2)
+                                  : "—"}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </section>
               )}
 
