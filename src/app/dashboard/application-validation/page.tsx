@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type ApiApplicationStatus = string;
@@ -156,7 +156,7 @@ function getDocumentTypeLabel(docType: string): string {
   return labels[docType] || docType.replace(/_/g, " ");
 }
 
-export default function ApplicationValidationPage() {
+function ApplicationValidationContent() {
   const [applications, setApplications] = useState<ApiApplication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1144,5 +1144,32 @@ export default function ApplicationValidationPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ApplicationValidationPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
+              Application Validation
+            </h1>
+            <p className="text-sm text-slate-600 mt-1 max-w-xl">
+              Review and validate incoming scholarship applications before moving
+              them to scrutiny and recommendation stages.
+            </p>
+          </div>
+        </div>
+        <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-6 text-sm text-slate-600">
+            Loading...
+          </div>
+        </div>
+      </div>
+    }>
+      <ApplicationValidationContent />
+    </Suspense>
   );
 }
