@@ -850,7 +850,7 @@ export default function ScrutinyPage() {
                                 }`}
                               >
                                 {result.success && result.is_eligible === true
-                                  ? "✓ ELIGIBLE"
+                                  ? "✓ VALIDATED"
                                   : result.success &&
                                     result.is_eligible === false
                                   ? "✗ NOT ELIGIBLE"
