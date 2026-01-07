@@ -192,6 +192,12 @@ export default function ScrutinyPage() {
   const [recommendationError, setRecommendationError] = useState<string | null>(
     null
   );
+  const [isLoadingVerification, setIsLoadingVerification] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(
+    null
+  );
+  const [verificationResults, setVerificationResults] = useState<any>(null);
+  const [showVerificationDetails, setShowVerificationDetails] = useState(false);
 
   useEffect(() => {
     async function loadApplications() {
@@ -242,6 +248,87 @@ export default function ScrutinyPage() {
 
     void loadApplications();
   }, []);
+    const handleFetchVerification = async () => {
+    if (!selectedApplication) return;
+    setIsLoadingVerification(true);
+    setVerificationError(null);
+    setVerificationResults(null);
+    setShowVerificationDetails(false);
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("grantiq_token")
+          : null;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/grantor/applications/get-verification-result`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            application_id: selectedApplication.application_id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as {
+          message?: string;
+          detail?: string;
+        };
+        throw new Error(
+          data.message ||
+            data.detail ||
+            "Unable to fetch verification results. Please try again."
+        );
+      }
+
+      const data = (await response.json()) as {
+        success: boolean;
+        message: string;
+        verification_result: any;
+      };
+
+      if (!data.success) {
+        throw new Error(
+          data.message || "Failed to fetch verification results"
+        );
+      }
+
+      if (!data.verification_result) {
+        throw new Error("No verification results found");
+      }
+
+      // Handle case where verification_result might be wrapped in applications array
+      let results = data.verification_result;
+      if (
+        results &&
+        typeof results === "object" &&
+        "applications" in results &&
+        Array.isArray(results.applications) &&
+        results.applications.length > 0
+      ) {
+        // Extract verification data from first application
+        const appData = results.applications[0];
+        const { application_id, ...verificationData } = appData;
+        results = verificationData;
+      }
+
+      setVerificationResults(results);
+      setShowVerificationDetails(true);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while fetching verification results.";
+      setVerificationError(message);
+    } finally {
+      setIsLoadingVerification(false);
+    }
+  };
 
   const categoryCounts = {
     SC: applications.filter((app) => getCategoryFromApplication(app) === "SC")
@@ -619,8 +706,13 @@ export default function ScrutinyPage() {
                     <td className="px-5 py-3 text-right">
                       <button
                         type="button"
-                        onClick={() => setSelectedApplication(application)}
-                        className="inline-flex items-center rounded-lg bg-purple-600 hover:bg-purple-700 px-3 py-1.5 text-[11px] font-medium text-white transition-colors"
+                        onClick={() => {
+                          setSelectedApplication(application);
+                          setVerificationResults(null);
+                          setShowVerificationDetails(false);
+                          setVerificationError(null);
+                        }}    
+                                            className="inline-flex items-center rounded-lg bg-purple-600 hover:bg-purple-700 px-3 py-1.5 text-[11px] font-medium text-white transition-colors"
                       >
                         View
                       </button>
@@ -807,12 +899,77 @@ export default function ScrutinyPage() {
                       <h3 className="text-sm font-semibold text-slate-900">
                         📋 Document Verification Results
                       </h3>
-                      {validationData.overall_eligible && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-300">
-                          <span className="text-sm">✓</span>
-                          All Verified & Eligible
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {/* <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${
+                            validationData.overall_eligible
+                              ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
+                              : validationData.overall_success
+                              ? "bg-amber-100 text-amber-700 border border-amber-300"
+                              : "bg-rose-100 text-rose-700 border border-rose-300"
+                          }`}
+                        >
+                          {validationData.overall_eligible ? (
+                            <>
+                              <span className="text-sm">✓</span>
+                              All Verified & Eligible
+                            </>
+                          ) : validationData.overall_success ? (
+                            <>
+                              <span className="text-sm">⚠</span>
+                              Manual Review Required
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-sm">✗</span>
+                              Issues Found
+                            </>
+                          )}
+                        </span> */}
+                        <button
+                          type="button"
+                          onClick={handleFetchVerification}
+                          disabled={isLoadingVerification}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                            isLoadingVerification
+                              ? "bg-slate-100 text-slate-700 border border-slate-300"
+                              : "bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
+                          }`}
+                        >
+                          {isLoadingVerification ? (
+                            <>
+                              <span className="inline-flex h-3 w-3 items-center justify-center">
+                                <svg
+                                  className="animate-spin h-2.5 w-2.5"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  ></path>
+                                </svg>
+                              </span>
+                              <span>Loading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-sm">🔍</span>
+                              <span>Verification</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -850,7 +1007,7 @@ export default function ScrutinyPage() {
                                 }`}
                               >
                                 {result.success && result.is_eligible === true
-                                  ? "✓ VALIDATED"
+                                  ? "✓ ELIGIBLE"
                                   : result.success &&
                                     result.is_eligible === false
                                   ? "✗ NOT ELIGIBLE"
@@ -1020,6 +1177,157 @@ export default function ScrutinyPage() {
                   </section>
                 );
               })()}
+
+              {/* Verification Results Section */}
+              {verificationError && (
+                <section className="md:col-span-2">
+                  <div className="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3">
+                    <p className="text-xs text-rose-700">
+                      <span className="font-semibold">Error: </span>
+                      {verificationError}
+                    </p>
+                  </div>
+                </section>
+              )}
+
+              {showVerificationDetails && verificationResults && (
+                <section className="md:col-span-2 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      🔍 Source Verification Results
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowVerificationDetails(false)}
+                      className="text-xs text-slate-500 hover:text-slate-700"
+                    >
+                      Hide
+                    </button>
+                  </div>
+
+                  {(() => {
+                    const documentEntries = Object.entries(verificationResults).filter(
+                      ([docType, docData]) => {
+                        if (docType === "application_id") return false;
+                        if (!docData || typeof docData !== "object") return false;
+                        return true;
+                      }
+                    );
+
+                    if (documentEntries.length === 0) {
+                      return (
+                        <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
+                          <p className="text-xs text-slate-600">
+                            No verification results available for this application.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        {documentEntries.map(([docType, docData]: [string, any]) => {
+                          const verificationStatus =
+                            docData?.result?.verification ?? false;
+                          const reason = docData?.result?.reason;
+                          const dataReceived = docData?.data_received || {};
+                          const verificationType =
+                            docData?.verification_type || "Unknown";
+
+                          return (
+                            <div
+                              key={docType}
+                              className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-md ${
+                                verificationStatus
+                                  ? "border-emerald-300 bg-emerald-50/50"
+                                  : "border-rose-300 bg-rose-50/50"
+                              }`}
+                            >
+                              <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-xs font-semibold text-slate-900">
+                                    {getDocumentTypeLabel(docType)}
+                                  </h4>
+                                  <span
+                                    className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                                      verificationStatus
+                                        ? "text-emerald-700"
+                                        : "text-rose-700"
+                                    }`}
+                                  >
+                                    {verificationStatus ? (
+                                      <>
+                                        <span>✓</span>
+                                        <span>VERIFIED</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span>✗</span>
+                                        <span>NOT VERIFIED</span>
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-600 mt-1">
+                                  {verificationType}
+                                </p>
+                              </div>
+
+                              <div className="px-4 py-3 space-y-3">
+                                {reason && (
+                                  <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                                    <p className="text-[10px] font-semibold text-amber-800 mb-1">
+                                      Reason:
+                                    </p>
+                                    <p className="text-xs text-amber-700">
+                                      {reason}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {!reason && !verificationStatus && (
+                                  <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+                                    <p className="text-xs text-slate-600">
+                                      Verification failed. No specific reason provided.
+                                    </p>
+                                  </div>
+                                )}
+
+                                {Object.keys(dataReceived).length > 0 && (
+                                  <div className="space-y-1.5">
+                                    <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                                      Data Received:
+                                    </p>
+                                    <div className="space-y-1.5">
+                                      {Object.entries(dataReceived).map(
+                                        ([key, value]) => (
+                                          <div
+                                            key={key}
+                                            className="flex justify-between items-center text-[11px]"
+                                          >
+                                            <span className="text-slate-500 font-medium capitalize">
+                                              {key.replace(/_/g, " ")}:
+                                            </span>
+                                            <span className="font-semibold text-slate-900 text-right">
+                                              {typeof value === "number"
+                                                ? value.toLocaleString("en-IN")
+                                                : String(value)}
+                                            </span>
+                                          </div>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </section>
+              )}
 
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
