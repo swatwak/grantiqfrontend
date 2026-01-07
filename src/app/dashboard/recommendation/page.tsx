@@ -273,7 +273,7 @@ export default function ScrutinyPage() {
     { value: "Architecture", label: "Architecture" },
     { value: "Management", label: "Management" },
     { value: "Science", label: "Science" },
-    { value: "Commerce/Economics", label: "Commerce/Economics" },
+    { value: "Commerce / Economics", label: "Commerce / Economics" },
     { value: "Arts", label: "Arts" },
     { value: "Law", label: "Law" },
     { value: "Pharmaceutical Sciences", label: "Pharmaceutical Sciences" },
@@ -296,16 +296,7 @@ export default function ScrutinyPage() {
       </div>
       <div className="flex flex-wrap gap-2">
         {/* Course Type */}
-        <button
-          onClick={() => setSelectedCourseType("all")}
-          className={`px-3 py-1 text-xs rounded-full border ${
-            selectedCourseType === "all"
-              ? "bg-purple-600 text-white border-purple-600"
-              : "bg-white text-slate-700 border-slate-300"
-          }`}
-        >
-          All
-        </button>
+
         {defaultCourses.map((c) => (
           <button
             key={c.value}
@@ -330,16 +321,7 @@ export default function ScrutinyPage() {
             <strong>Course Field</strong> to view rankings.
           </div>
         )}
-        <button
-          onClick={() => setSelectedCourseField("all")}
-          className={`px-3 py-1 text-xs rounded-full border ${
-            selectedCourseField === "all"
-              ? "bg-purple-600 text-white border-purple-600"
-              : "bg-white text-slate-700 border-slate-300"
-          }`}
-        >
-          All
-        </button>
+
         {courseFields.map((f) => (
           <button
             key={f.value}

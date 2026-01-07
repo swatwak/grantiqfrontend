@@ -393,112 +393,6 @@ export default function ScrutinyPage() {
             scores.
           </p>
         </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex flex-col items-end text-xs text-slate-600">
-            <span>Step 2 of 3</span>
-            <span className="text-slate-500">
-              Validation → Scrutiny → Recommendation
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={async () => {
-              setIsGeneratingRecommendation(true);
-              setRecommendationError(null);
-              try {
-                const token =
-                  typeof window !== "undefined"
-                    ? window.localStorage.getItem("grantiq_token")
-                    : null;
-
-                const response = await fetch(
-                  `${API_BASE_URL}/api/grantor/applications/recommendation`,
-                  {
-                    method: "GET",
-                    headers: {
-                      "Content-Type": "application/json",
-                      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    },
-                  }
-                );
-
-                if (!response.ok) {
-                  const data = (await response.json().catch(() => ({}))) as {
-                    message?: string;
-                    detail?: string;
-                  };
-                  throw new Error(
-                    data.message ||
-                      data.detail ||
-                      "Unable to generate recommendations. Please try again."
-                  );
-                }
-
-                const data = (await response.json()) as {
-                  success: boolean;
-                  message: string;
-                  data?: any;
-                };
-
-                if (!data.success) {
-                  throw new Error(data.message || "Recommendation failed");
-                }
-
-                // Navigate to recommendation page on success
-                router.push("/dashboard/recommendation");
-              } catch (err) {
-                const message =
-                  err instanceof Error
-                    ? err.message
-                    : "Something went wrong while generating recommendations.";
-                setRecommendationError(message);
-              } finally {
-                setIsGeneratingRecommendation(false);
-              }
-            }}
-            disabled={isGeneratingRecommendation}
-            className="h-10 rounded-full bg-emerald-600 border border-emerald-500 px-4 flex items-center gap-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isGeneratingRecommendation ? (
-              <>
-                <span className="inline-flex h-5 w-5 items-center justify-center">
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                </span>
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <span>Recommendation</span>
-              </>
-            )}
-          </button>
-          <div className="h-10 rounded-lg bg-purple-50 border border-purple-200 px-4 flex items-center gap-2 text-xs text-purple-900">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-purple-600 text-white text-[11px] font-semibold">
-              2
-            </span>
-            <span className="font-medium">Scrutiny Stage</span>
-          </div>
-        </div>
       </div>
 
       {/* Recommendation Error */}
@@ -510,70 +404,6 @@ export default function ScrutinyPage() {
           </div>
         </div>
       )}
-
-      {/* Category Bar */}
-      <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
-          <p className="text-sm font-medium text-slate-900 mb-3">Categories</p>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("all")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === "all"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              All ({applications.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("SC")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === "SC"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Scheduled Caste (SC) ({categoryCounts.SC})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("ST")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === "ST"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Scheduled Tribe (ST) ({categoryCounts.ST})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("Minority")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === "Minority"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Minority (Religious/Linguistic) ({categoryCounts.Minority})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("Open")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === "Open"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Open / General ({categoryCounts.Open})
-            </button>
-          </div>
-        </div>
-      </div>
 
       <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
@@ -659,6 +489,7 @@ export default function ScrutinyPage() {
                       </span>
                     </button>
                   </th>
+                  <th className="px-5 py-3 font-semibold">Status</th>
                   <th className="px-5 py-3 font-semibold text-right">
                     Actions
                   </th>
@@ -700,6 +531,9 @@ export default function ScrutinyPage() {
                       {application.submitted_at
                         ? formatDate(application.submitted_at)
                         : "Not submitted"}
+                    </td>
+                    <td className="px-5 py-3 text-slate-600 font-mono text-[13px]">
+                      {application.application_status.toUpperCase()}
                     </td>
                     <td className="px-5 py-3 text-right">
                       <button
