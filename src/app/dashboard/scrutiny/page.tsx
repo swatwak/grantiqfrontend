@@ -1226,13 +1226,14 @@ export default function ScrutinyPage() {
 
                     return (
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        {documentEntries.map(([docType, docData]: [string, any]) => {
-                          const verificationStatus =
-                            docData?.result?.verification ?? false;
-                          const reason = docData?.result?.reason;
-                          const dataReceived = docData?.data_received || {};
-                          const verificationType =
-                            docData?.verification_type || "Unknown";
+                      {documentEntries.map(([docType, docData]: [string, any]) => {
+                        if (!Array.isArray(docData) || docData.length === 0) return null;
+                        const latest = docData[docData.length - 1];
+                        const verificationStatus = Boolean(latest?.result?.verification);
+                        const reason = latest?.result?.reason || null;
+                        const dataReceived = latest?.data_received || {};
+                        const verificationType =
+                          latest?.verification_type || "Unknown";
 
                           return (
                             <div
