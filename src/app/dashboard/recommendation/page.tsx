@@ -143,6 +143,9 @@ export default function ScrutinyPage() {
   const [isViewDocsLoading, setIsViewDocsLoading] = useState(false);
   const [viewDocsError, setViewDocsError] = useState<string | null>(null);
   const [selectedDocType, setSelectedDocType] = useState<string>("form16");
+  // 1. ADD STATE (near other useState hooks)
+  const [selectedCourseType, setSelectedCourseType] = useState<string>("all");
+  const [selectedCourseField, setSelectedCourseField] = useState<string>("all");
 
   useEffect(() => {
     async function loadApplications() {
@@ -155,8 +158,19 @@ export default function ScrutinyPage() {
             ? window.localStorage.getItem("grantiq_token")
             : null;
 
+        const params = new URLSearchParams({
+          status: "submitted",
+        });
+
+        if (selectedCourseType !== "all") {
+          params.append("course_type", selectedCourseType);
+        }
+        if (selectedCourseField !== "all") {
+          params.append("course_field", selectedCourseField);
+        }
+
         const response = await fetch(
-          `${API_BASE_URL}/api/grantor/applications/recommendation?status=submitted`,
+          `${API_BASE_URL}/api/grantor/applications/recommendation?${params.toString()}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -192,7 +206,7 @@ export default function ScrutinyPage() {
     }
 
     void loadApplications();
-  }, []);
+  }, [selectedCourseType, selectedCourseField]);
 
   const categoryCounts = {
     SC: applications.filter((app) => getCategoryFromApplication(app) === "SC")
@@ -240,6 +254,22 @@ export default function ScrutinyPage() {
       return aRank - bRank;
     });
 
+  const defaultCourses = [
+    { value: "ms", label: "M.S", degreeType: "M.S" },
+    { value: "phd", label: "PhD", degreeType: "PhD" },
+  ];
+
+  const courseFields = [
+    { value: "Engineering", label: "Engineering" },
+    { value: "Architecture", label: "Architecture" },
+    { value: "Management", label: "Management" },
+    { value: "Science", label: "Science" },
+    { value: "Commerce/Economics", label: "Commerce/Economics" },
+    { value: "Arts", label: "Arts" },
+    { value: "Law", label: "Law" },
+    { value: "Pharmaceutical Sciences", label: "Pharmaceutical Sciences" },
+  ];
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -250,35 +280,73 @@ export default function ScrutinyPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex flex-col items-end text-xs text-slate-600">
-            <span>Step 3 of 3</span>
-            <span className="text-slate-500">
-              Validation → Scrutiny → Recommendation
-            </span>
-          </div>
           <div className="h-10 rounded-lg bg-purple-50 border border-purple-200 px-4 flex items-center gap-2 text-xs text-purple-900">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-purple-600 text-white text-[11px] font-semibold">
-              2
-            </span>
             <span className="font-medium">Recommendation Stage</span>
           </div>
         </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {/* Course Type */}
+        <button
+          onClick={() => setSelectedCourseType("all")}
+          className={`px-3 py-1 text-xs rounded-full border ${
+            selectedCourseType === "all"
+              ? "bg-purple-600 text-white border-purple-600"
+              : "bg-white text-slate-700 border-slate-300"
+          }`}
+        >
+          All
+        </button>
+        {defaultCourses.map((c) => (
+          <button
+            key={c.value}
+            onClick={() => setSelectedCourseType(c.degreeType)}
+            className={`px-3 py-1 text-xs rounded-full border ${
+              selectedCourseType === c.degreeType
+                ? "bg-purple-600 text-white border-purple-600"
+                : "bg-white text-slate-700 border-slate-300"
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {/* Course Field */}
+        <button
+          onClick={() => setSelectedCourseField("all")}
+          className={`px-3 py-1 text-xs rounded-full border ${
+            selectedCourseField === "all"
+              ? "bg-purple-600 text-white border-purple-600"
+              : "bg-white text-slate-700 border-slate-300"
+          }`}
+        >
+          All
+        </button>
+        {courseFields.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setSelectedCourseField(f.value)}
+            className={`px-3 py-1 text-xs rounded-full border ${
+              selectedCourseField === f.value
+                ? "bg-purple-600 text-white border-purple-600"
+                : "bg-white text-slate-700 border-slate-300"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
           <div className="flex items-center gap-3">
-            <span className="h-8 w-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center text-base">
-              📋
-            </span>
             <div>
-              <p className="text-sm font-medium text-slate-900">
-                Scrutiny Queue
-              </p>
               <p className="text-xs text-slate-600">
                 {isLoading
                   ? "Loading applications..."
-                  : `${filteredAndSortedApplications.length} applications in queue`}
+                  : `${filteredAndSortedApplications.length} applications`}
               </p>
             </div>
           </div>
@@ -292,25 +360,6 @@ export default function ScrutinyPage() {
                 placeholder="Search by applicant name or application ID"
                 className="w-full rounded-lg bg-white border border-slate-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="hidden sm:inline text-slate-500">Status</span>
-              <select
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(
-                    e.target.value as "all" | ApiApplicationStatus
-                  )
-                }
-                className="rounded-lg bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              >
-                <option value="all">All</option>
-                <option value="draft">Draft</option>
-                <option value="pending">Pending</option>
-                <option value="under_review">Under Review</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
             </div>
           </div>
         </div>
@@ -363,8 +412,11 @@ export default function ScrutinyPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-slate-900 font-medium">
-                      {application.recommendation_details?.scoreBreakdown?.totalScore != null
-                        ? application.recommendation_details.scoreBreakdown.totalScore.toFixed(2)
+                      {application.recommendation_details?.scoreBreakdown
+                        ?.totalScore != null
+                        ? application.recommendation_details.scoreBreakdown.totalScore.toFixed(
+                            2
+                          )
                         : "—"}
                     </td>
                     <td className="px-5 py-3 text-slate-600 text-xs">
@@ -779,7 +831,8 @@ export default function ScrutinyPage() {
                   </div>
 
                   {/* Score Breakdown Table */}
-                  {selectedApplication.recommendation_details.scoreBreakdown && (
+                  {selectedApplication.recommendation_details
+                    .scoreBreakdown && (
                     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
                       <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
                         <h4 className="text-sm font-semibold text-slate-900">
@@ -807,8 +860,11 @@ export default function ScrutinyPage() {
                                 University Score
                               </td>
                               <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details.scoreBreakdown.universityScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.universityScore.toFixed(2)
+                                {selectedApplication.recommendation_details
+                                  .scoreBreakdown.universityScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.universityScore.toFixed(
+                                      2
+                                    )
                                   : "—"}
                               </td>
                             </tr>
@@ -817,8 +873,11 @@ export default function ScrutinyPage() {
                                 Academic Score
                               </td>
                               <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details.scoreBreakdown.academicScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.academicScore.toFixed(2)
+                                {selectedApplication.recommendation_details
+                                  .scoreBreakdown.academicScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.academicScore.toFixed(
+                                      2
+                                    )
                                   : "—"}
                               </td>
                             </tr>
@@ -827,8 +886,11 @@ export default function ScrutinyPage() {
                                 Course Score
                               </td>
                               <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details.scoreBreakdown.courseScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.courseScore.toFixed(2)
+                                {selectedApplication.recommendation_details
+                                  .scoreBreakdown.courseScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.courseScore.toFixed(
+                                      2
+                                    )
                                   : "—"}
                               </td>
                             </tr>
@@ -837,8 +899,11 @@ export default function ScrutinyPage() {
                                 Income Score
                               </td>
                               <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details.scoreBreakdown.incomeScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.incomeScore.toFixed(2)
+                                {selectedApplication.recommendation_details
+                                  .scoreBreakdown.incomeScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.incomeScore.toFixed(
+                                      2
+                                    )
                                   : "—"}
                               </td>
                             </tr>
@@ -847,8 +912,11 @@ export default function ScrutinyPage() {
                                 Beneficiary Score
                               </td>
                               <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details.scoreBreakdown.beneficiaryScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.beneficiaryScore.toFixed(2)
+                                {selectedApplication.recommendation_details
+                                  .scoreBreakdown.beneficiaryScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.beneficiaryScore.toFixed(
+                                      2
+                                    )
                                   : "—"}
                               </td>
                             </tr>
@@ -857,8 +925,11 @@ export default function ScrutinyPage() {
                                 Age Score
                               </td>
                               <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details.scoreBreakdown.ageScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.ageScore.toFixed(2)
+                                {selectedApplication.recommendation_details
+                                  .scoreBreakdown.ageScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.ageScore.toFixed(
+                                      2
+                                    )
                                   : "—"}
                               </td>
                             </tr>
@@ -867,8 +938,11 @@ export default function ScrutinyPage() {
                                 Total Score
                               </td>
                               <td className="px-4 py-3 text-right text-xs font-bold text-purple-700">
-                                {selectedApplication.recommendation_details.scoreBreakdown.totalScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.totalScore.toFixed(2)
+                                {selectedApplication.recommendation_details
+                                  .scoreBreakdown.totalScore != null
+                                  ? selectedApplication.recommendation_details.scoreBreakdown.totalScore.toFixed(
+                                      2
+                                    )
                                   : "—"}
                               </td>
                             </tr>
