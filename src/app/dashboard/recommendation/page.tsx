@@ -144,11 +144,25 @@ export default function ScrutinyPage() {
   const [viewDocsError, setViewDocsError] = useState<string | null>(null);
   const [selectedDocType, setSelectedDocType] = useState<string>("form16");
   // 1. ADD STATE (near other useState hooks)
-  const [selectedCourseType, setSelectedCourseType] = useState<string>("all");
-  const [selectedCourseField, setSelectedCourseField] = useState<string>("all");
+  const [selectedCourseType, setSelectedCourseType] = useState<string | null>(
+    null
+  );
+  const [selectedCourseField, setSelectedCourseField] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     async function loadApplications() {
+      if (
+        !selectedCourseType ||
+        !selectedCourseField ||
+        selectedCourseType === "all" ||
+        selectedCourseField === "all"
+      ) {
+        setApplications([]);
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
@@ -160,14 +174,9 @@ export default function ScrutinyPage() {
 
         const params = new URLSearchParams({
           status: "submitted",
+          course_type: selectedCourseType,
+          course_field: selectedCourseField,
         });
-
-        if (selectedCourseType !== "all") {
-          params.append("course_type", selectedCourseType);
-        }
-        if (selectedCourseField !== "all") {
-          params.append("course_field", selectedCourseField);
-        }
 
         const response = await fetch(
           `${API_BASE_URL}/api/grantor/applications/recommendation?${params.toString()}`,
@@ -314,6 +323,13 @@ export default function ScrutinyPage() {
 
       <div className="flex flex-wrap gap-2">
         {/* Course Field */}
+        {/* Selection Warning */}
+        {(selectedCourseType === "all" || selectedCourseField === "all") && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Please select both <strong>Course Type</strong> and{" "}
+            <strong>Course Field</strong> to view rankings.
+          </div>
+        )}
         <button
           onClick={() => setSelectedCourseField("all")}
           className={`px-3 py-1 text-xs rounded-full border ${

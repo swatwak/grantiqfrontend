@@ -163,7 +163,7 @@ export default function EngineRulesPage() {
         </div>
       </div>
 
-      {/* Category Bar */}
+      {/* Category Bar
       <div className="rounded-xl bg-white border border-slate-400 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-400 bg-slate-50">
           <p className="text-sm font-medium text-slate-900 mb-3">Categories</p>
@@ -225,7 +225,7 @@ export default function EngineRulesPage() {
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
       <div className="flex justify-end gap-3">
         {!isEditing ? (
           <button
@@ -421,7 +421,7 @@ export default function EngineRulesPage() {
         </div>
       </div>
 
-      {/* Rules Configuration Form */}
+      {/* Rules Configuration Form
       <div className="rounded-xl bg-white border border-slate-400 shadow-sm overflow-hidden">
         <div className="px-6 py-5">
           <h2 className="text-lg font-semibold text-slate-900 mb-6">
@@ -518,7 +518,7 @@ export default function EngineRulesPage() {
             </div>
           </form>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
