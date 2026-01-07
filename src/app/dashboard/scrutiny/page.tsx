@@ -211,7 +211,7 @@ export default function ScrutinyPage() {
             : null;
 
         const response = await fetch(
-          `${API_BASE_URL}/api/grantor/applications/all?status=verified`,
+          `${API_BASE_URL}/api/grantor/applications/all?status=submitted`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -900,7 +900,7 @@ export default function ScrutinyPage() {
                         📋 Document Verification Results
                       </h3>
                       <div className="flex items-center gap-2">
-                        <span
+                        {/* <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${
                             validationData.overall_eligible
                               ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
@@ -925,7 +925,7 @@ export default function ScrutinyPage() {
                               Issues Found
                             </>
                           )}
-                        </span>
+                        </span> */}
                         <button
                           type="button"
                           onClick={handleFetchVerification}
@@ -1194,7 +1194,7 @@ export default function ScrutinyPage() {
                 <section className="md:col-span-2 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-slate-900">
-                      🔍 API Verification Results
+                      🔍 Source Verification Results
                     </h3>
                     <button
                       type="button"
