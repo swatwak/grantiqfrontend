@@ -12,7 +12,7 @@ type DashboardLayoutProps = {
 
 const navItems = [
   {
-    label: "Application Validation",
+    label: "Dashboard",
     href: "/dashboard/application-validation",
   },
   {
@@ -136,17 +136,32 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-          <div className="px-4 py-4 border-t border-slate-200 text-xs text-slate-600 flex items-center justify-between">
-            <span className="text-slate-500">
-              Manage GrantIQ engine settings
-            </span>
+          <div className="px-4 py-4 border-t border-slate-200 space-y-3">
             <button
               type="button"
-              onClick={() => router.push("/dashboard/engine-rules")}
-              className="inline-flex items-center rounded-lg bg-slate-100 border border-slate-300 px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+              onClick={() => router.push("/dashboard/rejection-logs")}
+              className={`w-full flex items-center justify-between gap-2 rounded-lg px-3 py-3 text-sm transition-all ${
+                pathname.startsWith("/dashboard/rejection-logs")
+                  ? "bg-rose-600 text-white shadow-sm"
+                  : "text-rose-700 hover:bg-rose-50 border border-rose-200"
+              }`}
             >
-              Config
+              <span>EnrollIQ Rejection Logs</span>
+              <span className="text-[10px] uppercase tracking-wide">Active</span>
             </button>
+
+            <div className="text-xs text-slate-600 flex items-center justify-between">
+              <span className="text-slate-500">
+                Manage GrantIQ engine settings
+              </span>
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/engine-rules")}
+                className="inline-flex items-center rounded-lg bg-slate-100 border border-slate-300 px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+              >
+                Config
+              </button>
+            </div>
           </div>
         </aside>
 

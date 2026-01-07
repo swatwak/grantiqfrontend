@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 
 type ApiApplicationStatus = string;
 
@@ -54,8 +53,6 @@ type ApiApplication = {
   current_step: number;
   submitted_at: string | null;
   updated_at: string;
-  merit_score?: number | null;
-  category?: string | null;
   validation_result: string | null;
 };
 
@@ -68,28 +65,34 @@ type ApiResponse = {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 
-type CategoryType = "SC" | "ST" | "Minority" | "Open" | "all";
-
 function statusStyles(status: ApiApplicationStatus) {
   const normalized = status.toLowerCase();
 
-  if (normalized === "draft" || normalized === "pending") {
-    return "bg-amber-500/15 text-amber-300 border border-amber-400/40";
+  if (normalized === "in_progress") {
+    return "bg-blue-500/15 text-blue-600 border border-blue-400/40";
   }
 
-  if (normalized === "under_review" || normalized === "under review") {
-    return "bg-sky-500/15 text-sky-300 border border-sky-400/40";
+  if (normalized === "submitted") {
+    return "bg-amber-500/15 text-amber-600 border border-amber-400/40";
   }
 
-  if (normalized === "approved") {
-    return "bg-emerald-500/15 text-emerald-300 border border-emerald-400/40";
+  if (normalized === "verified") {
+    return "bg-emerald-500/15 text-emerald-600 border border-emerald-400/40";
   }
 
   if (normalized === "rejected") {
-    return "bg-rose-500/15 text-rose-300 border border-rose-400/40";
+    return "bg-rose-500/15 text-rose-600 border border-rose-400/40";
   }
 
-  return "bg-slate-500/15 text-slate-200 border border-slate-400/40";
+  if (normalized === "validation_in_progress") {
+    return "bg-yellow-500/15 text-yellow-600 border border-yellow-400/40";
+  }
+
+  if (normalized === "accepted") {
+    return "bg-green-500/15 text-green-600 border border-green-400/40";
+  }
+
+  return "bg-slate-500/15 text-slate-600 border border-slate-400/40";
 }
 
 function formatDate(value: string) {
@@ -152,27 +155,7 @@ function getDocumentTypeLabel(docType: string): string {
   return labels[docType] || docType.replace(/_/g, " ");
 }
 
-function getCategoryFromApplication(application: ApiApplication): CategoryType {
-  // Determine category based on application data
-  if (application.tribe || application.st_certificate_number) {
-    return "ST";
-  }
-  if (application.caste_validity_cert_number) {
-    return "SC";
-  }
-  // You may need to add logic to detect Minority based on your data model
-  // For now, defaulting to "Open" if no category is explicitly set
-  if (application.category) {
-    const cat = application.category.toUpperCase();
-    if (cat === "SC") return "SC";
-    if (cat === "ST") return "ST";
-    if (cat.includes("MINORITY")) return "Minority";
-  }
-  return "Open";
-}
-
-export default function ScrutinyPage() {
-  const router = useRouter();
+function RejectionLogsContent() {
   const [applications, setApplications] = useState<ApiApplication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -181,23 +164,12 @@ export default function ScrutinyPage() {
   >("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [selectedCategory, setSelectedCategory] = useState<CategoryType>("all");
   const [selectedApplication, setSelectedApplication] =
     useState<ApiApplication | null>(null);
   const [isViewDocsLoading, setIsViewDocsLoading] = useState(false);
   const [viewDocsError, setViewDocsError] = useState<string | null>(null);
   const [selectedDocType, setSelectedDocType] = useState<string>("form16");
-  const [isGeneratingRecommendation, setIsGeneratingRecommendation] =
-    useState(false);
-  const [recommendationError, setRecommendationError] = useState<string | null>(
-    null
-  );
-  const [isLoadingVerification, setIsLoadingVerification] = useState(false);
-  const [verificationError, setVerificationError] = useState<string | null>(
-    null
-  );
   const [verificationResults, setVerificationResults] = useState<any>(null);
-  const [showVerificationDetails, setShowVerificationDetails] = useState(false);
 
   useEffect(() => {
     async function loadApplications() {
@@ -210,15 +182,15 @@ export default function ScrutinyPage() {
             ? window.localStorage.getItem("grantiq_token")
             : null;
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/grantor/applications/all?status=submitted`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-          }
-        );
+        // Always fetch rejected applications
+        const url = `${API_BASE_URL}/api/grantor/applications/all?status=rejected`;
+
+        const response = await fetch(url, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
 
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as
@@ -248,110 +220,9 @@ export default function ScrutinyPage() {
 
     void loadApplications();
   }, []);
-  const handleFetchVerification = async () => {
-    if (!selectedApplication) return;
-    setIsLoadingVerification(true);
-    setVerificationError(null);
-    setVerificationResults(null);
-    setShowVerificationDetails(false);
-    try {
-      const token =
-        typeof window !== "undefined"
-          ? window.localStorage.getItem("grantiq_token")
-          : null;
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/grantor/applications/get-verification-result`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            application_id: selectedApplication.application_id,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const data = (await response.json().catch(() => ({}))) as {
-          message?: string;
-          detail?: string;
-        };
-        throw new Error(
-          data.message ||
-            data.detail ||
-            "Unable to fetch verification results. Please try again."
-        );
-      }
-
-      const data = (await response.json()) as {
-        success: boolean;
-        message: string;
-        verification_result: any;
-      };
-
-      if (!data.success) {
-        throw new Error(data.message || "Failed to fetch verification results");
-      }
-
-      if (!data.verification_result) {
-        throw new Error("No verification results found");
-      }
-
-      // Handle case where verification_result might be wrapped in applications array
-      let results = data.verification_result;
-      if (
-        results &&
-        typeof results === "object" &&
-        "applications" in results &&
-        Array.isArray(results.applications) &&
-        results.applications.length > 0
-      ) {
-        // Extract verification data from first application
-        const appData = results.applications[0];
-        const { application_id, ...verificationData } = appData;
-        results = verificationData;
-      }
-
-      setVerificationResults(results);
-      setShowVerificationDetails(true);
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Something went wrong while fetching verification results.";
-      setVerificationError(message);
-    } finally {
-      setIsLoadingVerification(false);
-    }
-  };
-
-  const categoryCounts = {
-    SC: applications.filter((app) => getCategoryFromApplication(app) === "SC")
-      .length,
-    ST: applications.filter((app) => getCategoryFromApplication(app) === "ST")
-      .length,
-    Minority: applications.filter(
-      (app) => getCategoryFromApplication(app) === "Minority"
-    ).length,
-    Open: applications.filter(
-      (app) => getCategoryFromApplication(app) === "Open"
-    ).length,
-  };
 
   const filteredAndSortedApplications = applications
     .filter((application) => {
-      // Category filter
-      if (selectedCategory !== "all") {
-        const appCategory = getCategoryFromApplication(application);
-        if (appCategory !== selectedCategory) {
-          return false;
-        }
-      }
-
-      // Status filter
       const normalizedStatus = application.application_status.toLowerCase();
       const normalizedFilter = statusFilter.toLowerCase();
 
@@ -359,7 +230,6 @@ export default function ScrutinyPage() {
         return false;
       }
 
-      // Search filter
       if (!searchQuery.trim()) return true;
 
       const query = searchQuery.trim().toLowerCase();
@@ -382,217 +252,21 @@ export default function ScrutinyPage() {
     });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 h-[calc(100vh-7rem)] overflow-hidden">
+    <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
-            Scrutiny
+            EnrollIQ Rejection Logs
           </h1>
           <p className="text-sm text-slate-600 mt-1 max-w-xl">
-            Review and scrutinize validated applications by category with merit
-            scores.
+            View and review all rejected scholarship applications with detailed
+            validation results and rejection reasons.
           </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex flex-col items-end text-xs text-slate-600">
-            <span>Step 2 of 3</span>
-            <span className="text-slate-500">
-              Validation → Scrutiny → Recommendation
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={async () => {
-              setIsGeneratingRecommendation(true);
-              setRecommendationError(null);
-              try {
-                const token =
-                  typeof window !== "undefined"
-                    ? window.localStorage.getItem("grantiq_token")
-                    : null;
-
-                const response = await fetch(
-                  `${API_BASE_URL}/api/grantor/applications/recommendation`,
-                  {
-                    method: "GET",
-                    headers: {
-                      "Content-Type": "application/json",
-                      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    },
-                  }
-                );
-
-                if (!response.ok) {
-                  const data = (await response.json().catch(() => ({}))) as {
-                    message?: string;
-                    detail?: string;
-                  };
-                  throw new Error(
-                    data.message ||
-                      data.detail ||
-                      "Unable to generate recommendations. Please try again."
-                  );
-                }
-
-                const data = (await response.json()) as {
-                  success: boolean;
-                  message: string;
-                  data?: any;
-                };
-
-                if (!data.success) {
-                  throw new Error(data.message || "Recommendation failed");
-                }
-
-                // Navigate to recommendation page on success
-                router.push("/dashboard/recommendation");
-              } catch (err) {
-                const message =
-                  err instanceof Error
-                    ? err.message
-                    : "Something went wrong while generating recommendations.";
-                setRecommendationError(message);
-              } finally {
-                setIsGeneratingRecommendation(false);
-              }
-            }}
-            disabled={isGeneratingRecommendation}
-            className="h-10 rounded-full bg-emerald-600 border border-emerald-500 px-4 flex items-center gap-2 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isGeneratingRecommendation ? (
-              <>
-                <span className="inline-flex h-5 w-5 items-center justify-center">
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                </span>
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <span>Recommendation</span>
-              </>
-            )}
-          </button>
-          <div className="h-10 rounded-lg bg-purple-50 border border-purple-200 px-4 flex items-center gap-2 text-xs text-purple-900">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-purple-600 text-white text-[11px] font-semibold">
-              2
-            </span>
-            <span className="font-medium">Scrutiny Stage</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Recommendation Error */}
-      {recommendationError && (
-        <div className="rounded-xl bg-rose-50 border border-rose-200 px-5 py-4 text-sm text-rose-700">
-          <div className="flex items-center gap-2">
-            <span className="text-rose-500">⚠</span>
-            <span>{recommendationError}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Category Bar */}
-      <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
-          <p className="text-sm font-medium text-slate-900 mb-3">Categories</p>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("all")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === "all"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              All ({applications.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("SC")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === "SC"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Scheduled Caste (SC) ({categoryCounts.SC})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("ST")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === "ST"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Scheduled Tribe (ST) ({categoryCounts.ST})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("Minority")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === "Minority"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Minority (Religious/Linguistic) ({categoryCounts.Minority})
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("Open")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedCategory === "Open"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              Open / General ({categoryCounts.Open})
-            </button>
-          </div>
         </div>
       </div>
 
       <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
-          <div className="flex items-center gap-3">
-            <span className="h-8 w-8 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center text-base">
-              📋
-            </span>
-            <div>
-              <p className="text-sm font-medium text-slate-900">
-                Scrutiny Queue
-              </p>
-              <p className="text-xs text-slate-600">
-                {isLoading
-                  ? "Loading applications..."
-                  : `${filteredAndSortedApplications.length} applications in queue`}
-              </p>
-            </div>
-          </div>
-
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-slate-600 w-full sm:w-auto">
             <div className="flex-1">
               <input
@@ -600,10 +274,10 @@ export default function ScrutinyPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by applicant name or application ID"
-                className="w-full rounded-lg bg-white border border-slate-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full rounded-lg bg-white border border-slate-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <span className="hidden sm:inline text-slate-500">Status</span>
               <select
                 value={statusFilter}
@@ -612,28 +286,27 @@ export default function ScrutinyPage() {
                     e.target.value as "all" | ApiApplicationStatus
                   )
                 }
-                className="rounded-lg bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="rounded-lg bg-white border border-slate-300 px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All</option>
-                <option value="draft">Draft</option>
-                <option value="pending">Pending</option>
-                <option value="under_review">Under Review</option>
-                <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
               </select>
-            </div>
+            </div> */}
           </div>
         </div>
 
-        <div className="overflow-x-auto overflow-y-auto max-h-[45vh]">
-          {error ? (
+        <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
+          {isLoading ? (
+            <div className="px-5 py-6 text-sm text-slate-600">
+              Loading rejected applications...
+            </div>
+          ) : error ? (
             <div className="px-5 py-6 text-sm text-rose-600 bg-rose-50">
               {error}
             </div>
-          ) : applications.length === 0 && !isLoading ? (
+          ) : applications.length === 0 ? (
             <div className="px-5 py-6 text-sm text-slate-600">
-              No applications found yet. Once students start submitting, they
-              will appear here for scrutiny.
+              No rejected applications found.
             </div>
           ) : (
             <table className="min-w-full text-sm">
@@ -641,8 +314,10 @@ export default function ScrutinyPage() {
                 <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600 border-b border-slate-200">
                   <th className="px-5 py-3 font-semibold">Applicant Name</th>
                   <th className="px-5 py-3 font-semibold">Application ID</th>
-                  <th className="px-5 py-3 font-semibold">Category</th>
-                  {/* <th className="px-5 py-3 font-semibold">Merit Score</th> */}
+                  <th className="px-5 py-3 font-semibold">
+                    Application Status
+                  </th>
+                  <th className="px-5 py-3 font-semibold">Current Step</th>
                   <th className="px-5 py-3 font-semibold">
                     <button
                       type="button"
@@ -678,24 +353,22 @@ export default function ScrutinyPage() {
                     <td className="px-5 py-3 text-slate-600 font-mono text-[13px]">
                       {application.application_id.slice(-6).toUpperCase()}
                     </td>
-                    <td className="px-5 py-3 text-slate-600 text-xs">
-                      <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                        {getCategoryFromApplication(application)}
-                      </span>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-medium ${statusStyles(
+                            application.application_status
+                          )}`}
+                        >
+                          {application.application_status
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </span>
+                      </div>
                     </td>
-                    {/* <td className="px-5 py-3">
-                      {application.merit_score !== null &&
-                      application.merit_score !== undefined ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-900 font-semibold">
-                            {application.merit_score}
-                          </span>
-                          <span className="text-slate-500 text-xs">/100</span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 text-xs">—</span>
-                      )}
-                    </td> */}
+                    <td className="px-5 py-3 text-slate-600 text-xs">
+                      Step {application.current_step}
+                    </td>
                     <td className="px-5 py-3 text-slate-600 text-xs">
                       {application.submitted_at
                         ? formatDate(application.submitted_at)
@@ -704,13 +377,8 @@ export default function ScrutinyPage() {
                     <td className="px-5 py-3 text-right">
                       <button
                         type="button"
-                        onClick={() => {
-                          setSelectedApplication(application);
-                          setVerificationResults(null);
-                          setShowVerificationDetails(false);
-                          setVerificationError(null);
-                        }}
-                        className="inline-flex items-center rounded-lg bg-purple-600 hover:bg-purple-700 px-3 py-1.5 text-[11px] font-medium text-white transition-colors"
+                        onClick={() => setSelectedApplication(application)}
+                        className="inline-flex items-center rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-[11px] font-medium text-white transition-colors"
                       >
                         View
                       </button>
@@ -726,33 +394,24 @@ export default function ScrutinyPage() {
       {selectedApplication && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
           <div className="w-full max-w-5xl rounded-3xl bg-white border border-slate-200 shadow-2xl shadow-slate-900/30 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4 bg-purple-600">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4 bg-rose-600">
               <div>
-                <p className="text-xs uppercase tracking-wider text-purple-100 mb-1 font-semibold">
-                  Application Overview
+                <p className="text-xs uppercase tracking-wider text-rose-100 mb-1 font-semibold">
+                  Rejected Application Overview
                 </p>
                 <h2 className="text-lg font-semibold text-white">
                   {selectedApplication.full_name || "Unnamed Applicant"}
                 </h2>
-                <p className="text-xs text-purple-100 mt-1">
+                <p className="text-xs text-rose-100 mt-1">
                   ID:{" "}
                   <span className="font-mono">
-                    {selectedApplication.application_id}
+                    {selectedApplication.application_id.slice(-6).toUpperCase()}
                   </span>
                   {" · "}
                   Step {selectedApplication.current_step} · Status:{" "}
                   <span className="capitalize font-medium">
                     {selectedApplication.application_status}
                   </span>
-                  {selectedApplication.merit_score !== null &&
-                    selectedApplication.merit_score !== undefined && (
-                      <>
-                        {" · "}Merit Score:{" "}
-                        <span className="font-medium">
-                          {selectedApplication.merit_score}/100
-                        </span>
-                      </>
-                    )}
                 </p>
               </div>
               <button
@@ -798,21 +457,6 @@ export default function ScrutinyPage() {
                         : "—"}
                     </span>
                   </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Category</span>
-                    <span className="font-medium text-right">
-                      {getCategoryFromApplication(selectedApplication)}
-                    </span>
-                  </div>
-                  {selectedApplication.merit_score !== null &&
-                    selectedApplication.merit_score !== undefined && (
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">Merit Score</span>
-                        <span className="font-medium text-right">
-                          {selectedApplication.merit_score}/100
-                        </span>
-                      </div>
-                    )}
                 </div>
               </section>
 
@@ -888,8 +532,14 @@ export default function ScrutinyPage() {
                 const validationData = parseValidationResult(
                   selectedApplication.validation_result
                 );
+                const batchVerificationData =
+                  verificationResults?.results?.[
+                    selectedApplication.application_id
+                  ];
 
-                if (!validationData) return null;
+                const displayData = batchVerificationData || validationData;
+
+                if (!displayData) return null;
 
                 return (
                   <section className="md:col-span-2 space-y-4">
@@ -897,82 +547,17 @@ export default function ScrutinyPage() {
                       <h3 className="text-sm font-semibold text-slate-900">
                         📋 Document Verification Results
                       </h3>
-                      <div className="flex items-center gap-2">
-                        {/* <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${
-                            validationData.overall_eligible
-                              ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
-                              : validationData.overall_success
-                              ? "bg-amber-100 text-amber-700 border border-amber-300"
-                              : "bg-rose-100 text-rose-700 border border-rose-300"
-                          }`}
-                        >
-                          {validationData.overall_eligible ? (
-                            <>
-                              <span className="text-sm">✓</span>
-                              All Verified & Eligible
-                            </>
-                          ) : validationData.overall_success ? (
-                            <>
-                              <span className="text-sm">⚠</span>
-                              Manual Review Required
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-sm">✗</span>
-                              Issues Found
-                            </>
-                          )}
-                        </span> */}
-                        <button
-                          type="button"
-                          onClick={handleFetchVerification}
-                          disabled={isLoadingVerification}
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-                            isLoadingVerification
-                              ? "bg-slate-100 text-slate-700 border border-slate-300"
-                              : "bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
-                          }`}
-                        >
-                          {isLoadingVerification ? (
-                            <>
-                              <span className="inline-flex h-3 w-3 items-center justify-center">
-                                <svg
-                                  className="animate-spin h-2.5 w-2.5"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                  ></circle>
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                  ></path>
-                                </svg>
-                              </span>
-                              <span>Loading...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-sm">🔍</span>
-                              <span>Verification</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
+                      {displayData.overall_eligible && (
+                        <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-300">
+                          <span className="text-sm">✓</span>
+                          All Verified & Eligible
+                        </span>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                       {Object.entries(
-                        validationData.verification_results || {}
+                        displayData.verification_results || {}
                       ).map(([docType, result]: [string, any]) => (
                         <div
                           key={docType}
@@ -1153,189 +738,9 @@ export default function ScrutinyPage() {
                         </div>
                       ))}
                     </div>
-
-                    {/* <div
-                      className={`rounded-xl px-4 py-3 border ${
-                        validationData.overall_eligible
-                          ? "bg-emerald-50 border-emerald-300"
-                          : validationData.overall_success
-                          ? "bg-amber-50 border-amber-300"
-                          : "bg-rose-50 border-rose-300"
-                      }`}
-                    >
-                      <p className="text-xs font-medium text-slate-700">
-                        <span className="font-semibold">Overall Status: </span>
-                        {validationData.overall_eligible
-                          ? "✓ All documents verified and applicant is eligible for the scholarship"
-                          : validationData.overall_success
-                          ? "⚠ Documents processed successfully but manual review required for eligibility"
-                          : "✗ Some documents failed verification or applicant is not eligible"}
-                      </p>
-                    </div> */}
                   </section>
                 );
               })()}
-
-              {/* Verification Results Section */}
-              {verificationError && (
-                <section className="md:col-span-2">
-                  <div className="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3">
-                    <p className="text-xs text-rose-700">
-                      <span className="font-semibold">Error: </span>
-                      {verificationError}
-                    </p>
-                  </div>
-                </section>
-              )}
-
-              {showVerificationDetails && verificationResults && (
-                <section className="md:col-span-2 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      🔍 Source Verification Results
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setShowVerificationDetails(false)}
-                      className="text-xs text-slate-500 hover:text-slate-700"
-                    >
-                      Hide
-                    </button>
-                  </div>
-
-                  {(() => {
-                    const documentEntries = Object.entries(
-                      verificationResults
-                    ).filter(([docType, docData]) => {
-                      if (docType === "application_id") return false;
-                      if (!docData || typeof docData !== "object") return false;
-                      return true;
-                    });
-
-                    if (documentEntries.length === 0) {
-                      return (
-                        <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
-                          <p className="text-xs text-slate-600">
-                            No verification results available for this
-                            application.
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        {documentEntries.map(
-                          ([docType, docData]: [string, any]) => {
-                            if (!Array.isArray(docData) || docData.length === 0)
-                              return null;
-                            const latest = docData[docData.length - 1];
-                            const verificationStatus = Boolean(
-                              latest?.result?.verification
-                            );
-                            const reason = latest?.result?.reason || null;
-                            const dataReceived = latest?.data_received || {};
-                            const verificationType =
-                              latest?.verification_type || "Unknown";
-
-                            return (
-                              <div
-                                key={docType}
-                                className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-md ${
-                                  verificationStatus
-                                    ? "border-emerald-300 bg-emerald-50/50"
-                                    : "border-rose-300 bg-rose-50/50"
-                                }`}
-                              >
-                                <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="text-xs font-semibold text-slate-900">
-                                      {getDocumentTypeLabel(docType)}
-                                    </h4>
-                                    <span
-                                      className={`inline-flex items-center gap-1 text-[10px] font-bold ${
-                                        verificationStatus
-                                          ? "text-emerald-700"
-                                          : "text-rose-700"
-                                      }`}
-                                    >
-                                      {verificationStatus ? (
-                                        <>
-                                          <span>✓</span>
-                                          <span>VERIFIED</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <span>✗</span>
-                                          <span>NOT VERIFIED</span>
-                                        </>
-                                      )}
-                                    </span>
-                                  </div>
-                                  <p className="text-[10px] text-slate-600 mt-1">
-                                    {verificationType}
-                                  </p>
-                                </div>
-
-                                <div className="px-4 py-3 space-y-3">
-                                  {reason && (
-                                    <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
-                                      <p className="text-[10px] font-semibold text-amber-800 mb-1">
-                                        Reason:
-                                      </p>
-                                      <p className="text-xs text-amber-700">
-                                        {reason}
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {!reason && !verificationStatus && (
-                                    <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
-                                      <p className="text-xs text-slate-600">
-                                        Verification failed. No specific reason
-                                        provided.
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {Object.keys(dataReceived).length > 0 && (
-                                    <div className="space-y-1.5">
-                                      <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                                        Data Received:
-                                      </p>
-                                      <div className="space-y-1.5">
-                                        {Object.entries(dataReceived).map(
-                                          ([key, value]) => (
-                                            <div
-                                              key={key}
-                                              className="flex justify-between items-center text-[11px]"
-                                            >
-                                              <span className="text-slate-500 font-medium capitalize">
-                                                {key.replace(/_/g, " ")}:
-                                              </span>
-                                              <span className="font-semibold text-slate-900 text-right">
-                                                {typeof value === "number"
-                                                  ? value.toLocaleString(
-                                                      "en-IN"
-                                                    )
-                                                  : String(value)}
-                                              </span>
-                                            </div>
-                                          )
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          }
-                        )}
-                      </div>
-                    );
-                  })()}
-                </section>
-              )}
 
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
@@ -1346,7 +751,7 @@ export default function ScrutinyPage() {
                     <select
                       value={selectedDocType}
                       onChange={(e) => setSelectedDocType(e.target.value)}
-                      className="rounded-full bg-white border border-slate-300 px-3 py-1.5 text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+                      className="rounded-full bg-white border border-slate-300 px-3 py-1.5 text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                     >
                       <option value="form16">Form 16</option>
                       <option value="caste_certificate">
@@ -1447,7 +852,7 @@ export default function ScrutinyPage() {
                           setIsViewDocsLoading(false);
                         }
                       }}
-                      className="inline-flex items-center rounded-full bg-purple-600 border border-purple-500 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="inline-flex items-center rounded-full bg-blue-600 border border-blue-500 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {isViewDocsLoading ? "Opening..." : "View Documents"}
                     </button>
@@ -1530,3 +935,31 @@ export default function ScrutinyPage() {
     </div>
   );
 }
+
+export default function RejectionLogsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
+                EnrollIQ Rejection Logs
+              </h1>
+              <p className="text-sm text-slate-600 mt-1 max-w-xl">
+                View and review all rejected scholarship applications with
+                detailed validation results and rejection reasons.
+              </p>
+            </div>
+          </div>
+          <div className="rounded-xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-6 text-sm text-slate-600">Loading...</div>
+          </div>
+        </div>
+      }
+    >
+      <RejectionLogsContent />
+    </Suspense>
+  );
+}
+
