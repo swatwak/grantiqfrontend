@@ -99,6 +99,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <p className="text-xs uppercase tracking-wider text-slate-500 mb-4 font-semibold">
               Grantor Console
             </p>
+
             <h2 className="text-lg font-semibold text-slate-900">
               Application Workflow
             </h2>

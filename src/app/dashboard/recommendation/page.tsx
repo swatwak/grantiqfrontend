@@ -736,6 +736,36 @@ function RecommendationPageData() {
                 </p>
               </div>
               <button
+                onClick={async () => {
+                  const res = await fetch("/api/download-pdf", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      applicationId: selectedApplication.application_id,
+                      data: selectedApplication,
+                    }),
+                  });
+
+                  if (!res.ok) {
+                    throw new Error("Failed to generate PDF");
+                  }
+
+                  const blob = await res.blob();
+                  const url = window.URL.createObjectURL(blob);
+
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "application.pdf";
+                  a.click();
+
+                  window.URL.revokeObjectURL(url);
+                }}
+              >
+                Download PDF
+              </button>
+              <button
                 type="button"
                 onClick={() => setSelectedApplication(null)}
                 className="text-white hover:text-white/80 text-lg px-2 py-1 rounded-lg hover:bg-white/10 transition-colors"
