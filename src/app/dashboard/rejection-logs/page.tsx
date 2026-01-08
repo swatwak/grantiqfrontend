@@ -84,12 +84,12 @@ export function statusStyles(status: ApiApplicationStatus) {
     return "bg-rose-500/15 text-rose-600 border border-rose-400/40";
   }
 
-  if (normalized === "validation_in_progress") {
-    return "bg-yellow-500/15 text-yellow-600 border border-yellow-400/40";
+  if (normalized === "verification_in_progress") {
+    return "bg-purple-500/15 text-purple-600 border border-purple-400/40";
   }
 
-  if (normalized === "accepted") {
-    return "bg-green-500/15 text-green-600 border border-green-400/40";
+  if (normalized === "verification_failed") {
+    return "bg-pink-500/15 text-pink-600 border border-pink-400/40";
   }
 
   return "bg-slate-500/15 text-slate-600 border border-slate-400/40";

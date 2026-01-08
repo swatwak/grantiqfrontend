@@ -65,12 +65,51 @@ type ApiApplication = {
   merit_score?: number | null;
   category?: string | null;
   recommendation_details?: RecommendationDetails | null;
+  validation_result: string | null;
 };
 
 type ApiResponse = {
   success: boolean;
   message: string;
   data: ApiApplication[];
+};
+
+type VerificationResult = {
+  success: boolean;
+  message: string;
+  data: any;
+  is_eligible: boolean | null;
+};
+
+type ValidationResultData = {
+  success: boolean;
+  message: string;
+  application_id: string;
+  verification_results: {
+    [docType: string]: VerificationResult;
+  };
+  overall_success: boolean;
+  overall_eligible: boolean;
+};
+
+type Weightage = {
+  university: number;
+  academic: number;
+  course: number;
+  income: number;
+  beneficiary: number;
+  age: number;
+};
+
+type CourseSeat = {
+  course_field: string;
+  seats: number;
+  weightage: Weightage;
+};
+
+type CourseConfig = {
+  course_type: string;
+  data: CourseSeat[];
 };
 
 const API_BASE_URL =
@@ -110,7 +149,7 @@ function getCategoryFromApplication(application: ApiApplication): CategoryType {
   return "Open";
 }
 
-function ScrutinyPage() {
+function RecommendationPageData() {
   const [applications, setApplications] = useState<ApiApplication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -142,7 +181,43 @@ function ScrutinyPage() {
   const [isApproving, setIsApproving] = useState(false);
   const [approvalError, setApprovalError] = useState<string | null>(null);
 
+  const [verificationResults, setVerificationResults] = useState<any>(null);
+  const [showVerificationDetails, setShowVerificationDetails] = useState(false);
+
+  const [isLoadingVerification, setIsLoadingVerification] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(
+    null
+  );
+  const [courseConfig, setCourseConfig] = useState<CourseConfig[]>([]);
+
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const fetchCourseConfig = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grantor/applications/config/course-data`
+        );
+        const json = await res.json();
+
+        if (json.success) {
+          setCourseConfig(json.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch course config", err);
+      }
+    };
+
+    const fetchDataConfig = async () => {
+      try {
+      } catch (err) {
+        console.error("Failed to fetch date config", err);
+      }
+    };
+
+    fetchCourseConfig();
+    fetchDataConfig();
+  }, []);
 
   useEffect(() => {
     const courseType = searchParams.get("courseType");
@@ -182,7 +257,9 @@ function ScrutinyPage() {
             : null;
 
         const params = new URLSearchParams({
-          status: "submitted",
+          status: verificationInProgress
+            ? "submitted,verification_failed,verification_in_progress"
+            : "submitted,grant_approved",
           course_type: selectedCourseType,
           course_field: selectedCourseField,
         });
@@ -405,18 +482,168 @@ function ScrutinyPage() {
     { value: "Pharmaceutical Sciences", label: "Pharmaceutical Sciences" },
   ];
 
+  function parseValidationResult(
+    validationResultStr: string | null
+  ): ValidationResultData | null {
+    if (!validationResultStr) return null;
+
+    try {
+      return JSON.parse(validationResultStr) as ValidationResultData;
+    } catch {
+      try {
+        const jsCode = validationResultStr
+          .replace(/\bTrue\b/g, "true")
+          .replace(/\bFalse\b/g, "false")
+          .replace(/\bNone\b/g, "null");
+
+        const result = new Function(`return ${jsCode}`)();
+        return JSON.parse(JSON.stringify(result)) as ValidationResultData;
+      } catch (error) {
+        console.error("Failed to parse validation_result:", error);
+        try {
+          const jsonStr = validationResultStr
+            .replace(/\bTrue\b/g, "true")
+            .replace(/\bFalse\b/g, "false")
+            .replace(/\bNone\b/g, "null")
+            .replace(/'/g, '"');
+          return JSON.parse(jsonStr) as ValidationResultData;
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+
+  const handleFetchVerification = async () => {
+    if (!selectedApplication) return;
+    setIsLoadingVerification(true);
+    setVerificationError(null);
+    setVerificationResults(null);
+    setShowVerificationDetails(false);
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("grantiq_token")
+          : null;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/grantor/applications/get-verification-result`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            application_id: selectedApplication.application_id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as {
+          message?: string;
+          detail?: string;
+        };
+        throw new Error(
+          data.message ||
+            data.detail ||
+            "Unable to fetch verification results. Please try again."
+        );
+      }
+
+      const data = (await response.json()) as {
+        success: boolean;
+        message: string;
+        verification_result: any;
+      };
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to fetch verification results");
+      }
+
+      if (!data.verification_result) {
+        throw new Error("No verification results found");
+      }
+
+      // Handle case where verification_result might be wrapped in applications array
+      let results = data.verification_result;
+      if (
+        results &&
+        typeof results === "object" &&
+        "applications" in results &&
+        Array.isArray(results.applications) &&
+        results.applications.length > 0
+      ) {
+        // Extract verification data from first application
+        const appData = results.applications[0];
+        const { application_id, ...verificationData } = appData;
+        results = verificationData;
+      }
+
+      setVerificationResults(results);
+      setShowVerificationDetails(true);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while fetching verification results.";
+      setVerificationError(message);
+    } finally {
+      setIsLoadingVerification(false);
+    }
+  };
+
+  function getDocumentTypeLabel(docType: string): string {
+    const labels: { [key: string]: string } = {
+      form16: "Form 16 (Income)",
+      caste_certificate: "Caste Certificate",
+      marksheet_10th: "10th Marksheet",
+      marksheet_12th: "12th Marksheet",
+      marksheet_graduation: "Graduation Marksheet",
+      offer_letter: "Offer Letter",
+      bank_passbook: "Bank Passbook",
+      statement_of_purpose: "Statement of Purpose",
+      cv: "CV/Resume",
+    };
+    return labels[docType] || docType.replace(/_/g, " ");
+  }
+
+  function getCourseConfig(
+    courseType: string,
+    courseField: string
+  ): CourseSeat | null {
+    const courseTypeEntry = courseConfig.find(
+      (item) => item.course_type === courseType
+    );
+
+    if (!courseTypeEntry) {
+      return null;
+    }
+
+    const fieldEntry = courseTypeEntry.data.find(
+      (field) => field.course_field === courseField
+    );
+
+    return fieldEntry ?? null;
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
-            Recommendation
+            Application Summary
           </h1>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="h-10 rounded-lg bg-purple-50 border border-purple-200 px-4 flex items-center gap-2 text-xs text-purple-900">
-            <span className="font-medium">Recommendation Stage</span>
+            <span className="font-medium">
+              {verificationInProgress
+                ? "Scrutiny Stage"
+                : "Recommendation Stage"}
+            </span>
           </div>
         </div>
       </div>
@@ -475,6 +702,12 @@ function ScrutinyPage() {
             </div>
           </div>
 
+          <div className="text-sm text-slate-600 flex items-center gap-3">
+            {getCourseConfig(selectedCourseType!, selectedCourseField!)?.seats}{" "}
+            {getCourseConfig(selectedCourseType!, selectedCourseField!) &&
+              "Seats Available"}
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-slate-600 w-full sm:w-auto">
             <div className="flex-1">
               <input
@@ -495,8 +728,7 @@ function ScrutinyPage() {
             </div>
           ) : applications.length === 0 && !isLoading ? (
             <div className="px-5 py-6 text-sm text-slate-600">
-              No applications found yet. Once students start submitting, they
-              will appear here for scrutiny.
+              Select a Course data to view applications.
             </div>
           ) : (
             <table className="min-w-full text-sm">
@@ -783,27 +1015,6 @@ function ScrutinyPage() {
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    {/* Category */}
-                    <div className="rounded-xl border-2 overflow-hidden border-purple-300 bg-purple-50/50">
-                      <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-semibold text-slate-900">
-                            Category
-                          </h4>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700">
-                            {selectedApplication.recommendation_details
-                              .category || "—"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 space-y-2">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          Applicant&apos;s category classification for
-                          scholarship eligibility.
-                        </p>
-                      </div>
-                    </div>
-
                     {/* Course Level Priority */}
                     <div className="rounded-xl border-2 overflow-hidden border-blue-300 bg-blue-50/50">
                       <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
@@ -1116,6 +1327,464 @@ function ScrutinyPage() {
                       </div>
                     </div>
                   )}
+                </section>
+              )}
+
+              {(() => {
+                const validationData = parseValidationResult(
+                  selectedApplication.validation_result
+                );
+
+                if (!validationData) return null;
+
+                return (
+                  <section className="md:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        📋 Document Validation Results
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleFetchVerification}
+                          disabled={isLoadingVerification}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                            isLoadingVerification
+                              ? "bg-slate-100 text-slate-700 border border-slate-300"
+                              : "bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
+                          }`}
+                        >
+                          {isLoadingVerification ? (
+                            <>
+                              <span className="inline-flex h-3 w-3 items-center justify-center">
+                                <svg
+                                  className="animate-spin h-2.5 w-2.5"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  ></path>
+                                </svg>
+                              </span>
+                              <span>Loading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-sm">🔍</span>
+                              <span>Verification</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                      {Object.entries(
+                        validationData.verification_results || {}
+                      ).map(([docType, result]: [string, any]) => (
+                        <div
+                          key={docType}
+                          className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-md ${
+                            result.success && result.is_eligible === true
+                              ? "border-emerald-300 bg-emerald-50/50"
+                              : result.success && result.is_eligible === false
+                              ? "border-amber-300 bg-amber-50/50"
+                              : result.success && result.is_eligible === null
+                              ? "border-blue-300 bg-blue-50/50"
+                              : "border-rose-300 bg-rose-50/50"
+                          }`}
+                        >
+                          <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs font-semibold text-slate-900">
+                                {getDocumentTypeLabel(docType)}
+                              </h4>
+                              <span
+                                className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                                  result.success && result.is_eligible === true
+                                    ? "text-emerald-700"
+                                    : result.success &&
+                                      result.is_eligible === false
+                                    ? "text-amber-700"
+                                    : result.success &&
+                                      result.is_eligible === null
+                                    ? "text-blue-700"
+                                    : "text-rose-700"
+                                }`}
+                              >
+                                {result.success && result.is_eligible === true
+                                  ? "✓ ELIGIBLE"
+                                  : result.success &&
+                                    result.is_eligible === false
+                                  ? "✗ NOT ELIGIBLE"
+                                  : result.success &&
+                                    result.is_eligible === null
+                                  ? "? REVIEW"
+                                  : "✗ FAILED"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="px-4 py-3 space-y-2">
+                            <p className="text-xs text-slate-700 leading-relaxed">
+                              {result.message ||
+                                "No verification message available"}
+                            </p>
+
+                            {result.data && (
+                              <div className="mt-3 pt-3 border-t border-slate-200 space-y-1.5">
+                                {result.data.gross_income_numeric !==
+                                  undefined && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Gross Income
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      ₹
+                                      {result.data.gross_income_numeric.toLocaleString(
+                                        "en-IN"
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.income_limit !== undefined && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Income Limit
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      ₹
+                                      {result.data.income_limit.toLocaleString(
+                                        "en-IN"
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.percentage !== undefined &&
+                                  result.data.percentage !== null && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        Percentage
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {typeof result.data.percentage ===
+                                        "number"
+                                          ? `${result.data.percentage.toFixed(
+                                              2
+                                            )}%`
+                                          : result.data.percentage}
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.percentage_numeric !== undefined &&
+                                  result.data.percentage_numeric !== null && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        Percentage
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {result.data.percentage_numeric.toFixed(
+                                          2
+                                        )}
+                                        %
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.cgpa !== undefined &&
+                                  result.data.cgpa !== null && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        CGPA
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {result.data.cgpa}
+                                        {result.data.cgpa_scale &&
+                                          ` / ${result.data.cgpa_scale}`}
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.category && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Category
+                                    </span>
+                                    <span className="font-semibold text-slate-900 uppercase">
+                                      {result.data.category}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.extracted_caste &&
+                                  result.data.extracted_caste !==
+                                    "Not Available" && (
+                                    <div className="flex justify-between items-center text-[11px]">
+                                      <span className="text-slate-500 font-medium">
+                                        Extracted Caste
+                                      </span>
+                                      <span className="font-semibold text-slate-900">
+                                        {result.data.extracted_caste}
+                                      </span>
+                                    </div>
+                                  )}
+                                {result.data.extracted_name && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Document Name
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      {result.data.extracted_name}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.student_name && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Student Name
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      {result.data.student_name}
+                                    </span>
+                                  </div>
+                                )}
+                                {result.data.year_of_passing && (
+                                  <div className="flex justify-between items-center text-[11px]">
+                                    <span className="text-slate-500 font-medium">
+                                      Year of Passing
+                                    </span>
+                                    <span className="font-semibold text-slate-900">
+                                      {result.data.year_of_passing}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* <div
+                      className={`rounded-xl px-4 py-3 border ${
+                        validationData.overall_eligible
+                          ? "bg-emerald-50 border-emerald-300"
+                          : validationData.overall_success
+                          ? "bg-amber-50 border-amber-300"
+                          : "bg-rose-50 border-rose-300"
+                      }`}
+                    >
+                      <p className="text-xs font-medium text-slate-700">
+                        <span className="font-semibold">Overall Status: </span>
+                        {validationData.overall_eligible
+                          ? "✓ All documents verified and applicant is eligible for the scholarship"
+                          : validationData.overall_success
+                          ? "⚠ Documents processed successfully but manual review required for eligibility"
+                          : "✗ Some documents failed verification or applicant is not eligible"}
+                      </p>
+                    </div> */}
+                  </section>
+                );
+              })()}
+
+              {verificationError && (
+                <section className="md:col-span-2">
+                  <div className="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3">
+                    <p className="text-xs text-rose-700">
+                      <span className="font-semibold">Error: </span>
+                      {verificationError}
+                    </p>
+                  </div>
+                </section>
+              )}
+
+              {showVerificationDetails && verificationResults && (
+                <section className="md:col-span-2 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      🔍 Source Verification Results
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowVerificationDetails(false)}
+                      className="text-xs text-slate-500 hover:text-slate-700"
+                    >
+                      Hide
+                    </button>
+                  </div>
+
+                  {(() => {
+                    const documentEntries = Object.entries(
+                      verificationResults
+                    ).filter(([docType, docData]) => {
+                      if (docType === "application_id") return false;
+                      if (!docData || typeof docData !== "object") return false;
+                      return true;
+                    });
+
+                    if (documentEntries.length === 0) {
+                      return (
+                        <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
+                          <p className="text-xs text-slate-600">
+                            No verification results available for this
+                            application.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        {documentEntries.map(
+                          ([docType, docData]: [string, any]) => {
+                            if (!Array.isArray(docData) || docData.length === 0)
+                              return null;
+                            const latest = docData[docData.length - 1];
+                            const verificationValue =
+                              latest?.result?.verification;
+                            // true | false | null
+
+                            const verificationState =
+                              verificationValue === true
+                                ? "verified"
+                                : verificationValue === false
+                                ? "failed"
+                                : "inprogress";
+
+                            const reason = latest?.result?.reason || null;
+                            const dataReceived = latest?.data_received || {};
+                            const verificationType =
+                              latest?.verification_type || "Unknown";
+                            const source = latest?.result?.source || null;
+
+                            return (
+                              <div
+                                key={docType}
+                                className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-md ${
+                                  verificationState === "verified"
+                                    ? "border-emerald-300 bg-emerald-50/50"
+                                    : verificationState === "failed"
+                                    ? "border-rose-300 bg-rose-50/50"
+                                    : "border-amber-300 bg-amber-50/50"
+                                }`}
+                              >
+                                <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                                  <div className="flex items-center justify-between">
+                                    <h4 className="text-xs font-semibold text-slate-900">
+                                      {getDocumentTypeLabel(docType)}
+                                    </h4>
+                                    <span
+                                      className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                                        verificationState === "verified"
+                                          ? "text-emerald-700"
+                                          : verificationState === "failed"
+                                          ? "text-rose-700"
+                                          : "text-amber-700"
+                                      }`}
+                                    >
+                                      {verificationState === "verified" && (
+                                        <>
+                                          <span>✓</span>
+                                          <span>VERIFIED</span>
+                                        </>
+                                      )}
+
+                                      {verificationState === "failed" && (
+                                        <>
+                                          <span>✗</span>
+                                          <span>NOT VERIFIED</span>
+                                        </>
+                                      )}
+
+                                      {verificationState === "inprogress" && (
+                                        <>
+                                          <span>⏳</span>
+                                          <span>IN PROGRESS</span>
+                                        </>
+                                      )}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-slate-600 mt-1">
+                                    {verificationType}
+                                  </p>
+                                </div>
+
+                                <div className="px-4 py-3 space-y-3">
+                                  {reason && (
+                                    <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                                      <p className="text-[10px] font-semibold text-amber-800 mb-1">
+                                        Reason:
+                                      </p>
+                                      <p className="text-xs text-amber-700">
+                                        {reason}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {!reason &&
+                                    verificationState === "failed" && (
+                                      <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+                                        <p className="text-xs text-slate-600">
+                                          Verification failed. No specific
+                                          reason provided.
+                                        </p>
+                                      </div>
+                                    )}
+                                  {source && (
+                                    <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+                                      <p className="text-[10px] font-semibold text-slate-600 mb-1">
+                                        Verified Source:
+                                      </p>
+                                      <p className="text-xs text-slate-700">
+                                        {source}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {Object.keys(dataReceived).length > 0 && (
+                                    <div className="space-y-1.5">
+                                      <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide mb-2">
+                                        Data Received:
+                                      </p>
+                                      <div className="space-y-1.5">
+                                        {Object.entries(dataReceived).map(
+                                          ([key, value]) => (
+                                            <div
+                                              key={key}
+                                              className="flex justify-between items-center text-[11px]"
+                                            >
+                                              <span className="text-slate-500 font-medium capitalize">
+                                                {key.replace(/_/g, " ")}:
+                                              </span>
+                                              <span className="font-semibold text-slate-900 text-right">
+                                                {typeof value === "number"
+                                                  ? value.toLocaleString(
+                                                      "en-IN"
+                                                    )
+                                                  : String(value)}
+                                              </span>
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+                        )}
+                      </div>
+                    );
+                  })()}
                 </section>
               )}
 
@@ -1473,7 +2142,7 @@ function ScrutinyPage() {
 export default function RecommendationPage() {
   return (
     <Suspense fallback={<div>Loading recommendations...</div>}>
-      <ScrutinyPage />
+      <RecommendationPageData />
     </Suspense>
   );
 }
