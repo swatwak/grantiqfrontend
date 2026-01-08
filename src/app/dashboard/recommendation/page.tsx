@@ -346,7 +346,7 @@ function RecommendationPageData() {
         // Reload applications
         const updatedApplications = applications.map((app) =>
           app.id === selectedApplication.id
-            ? { ...app, application_status: "approved" }
+            ? { ...app, application_status: "grant_approved" }
             : app
         );
         setApplications(updatedApplications);
@@ -407,7 +407,7 @@ function RecommendationPageData() {
       // Reload applications
       const updatedApplications = applications.map((app) =>
         app.id === selectedApplication.id
-          ? { ...app, application_status: "approved" }
+          ? { ...app, application_status: "grant_approved" }
           : app
       );
       setApplications(updatedApplications);
