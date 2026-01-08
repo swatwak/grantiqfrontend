@@ -173,6 +173,13 @@ function RecommendationPageData() {
   const [verificationInProgress, setVerificationInProgress] = useState<
     boolean | null
   >(null);
+  const [showApprovalConfirmation, setShowApprovalConfirmation] =
+    useState(false);
+  const [showApprovalReasonModal, setShowApprovalReasonModal] = useState(false);
+  const [approvalReason, setApprovalReason] = useState("");
+  const [approvalDeclaration, setApprovalDeclaration] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
 
   const [verificationResults, setVerificationResults] = useState<any>(null);
   const [showVerificationDetails, setShowVerificationDetails] = useState(false);
@@ -295,6 +302,127 @@ function RecommendationPageData() {
 
     void loadApplications();
   }, [selectedCourseType, selectedCourseField]);
+
+  const handleApproveGrant = async () => {
+    if (!selectedApplication) return;
+
+    const zone = selectedApplication.recommendation_details?.zone;
+
+    if (zone === "green") {
+      // Direct approval for green zone
+      try {
+        setIsApproving(true);
+        setApprovalError(null);
+
+        const token =
+          typeof window !== "undefined"
+            ? window.localStorage.getItem("grantiq_token")
+            : null;
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/grantor/applications/approve_grant`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              application_id: selectedApplication.application_id,
+              approve_reason: null,
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const data = (await response.json().catch(() => ({}))) as {
+            message?: string;
+          };
+          throw new Error(data.message || "Failed to approve grant.");
+        }
+
+        setShowApprovalConfirmation(false);
+        setSelectedApplication(null);
+        // Reload applications
+        const updatedApplications = applications.map((app) =>
+          app.id === selectedApplication.id
+            ? { ...app, application_status: "grant_approved" }
+            : app
+        );
+        setApplications(updatedApplications);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Something went wrong.";
+        setApprovalError(message);
+      } finally {
+        setIsApproving(false);
+      }
+    } else {
+      // Show reason modal for non-green zones
+      setShowApprovalConfirmation(false);
+      setShowApprovalReasonModal(true);
+    }
+  };
+
+  const handleApprovalWithReason = async () => {
+    if (
+      !selectedApplication ||
+      !approvalReason.trim() ||
+      !approvalDeclaration
+    ) {
+      return;
+    }
+
+    try {
+      setIsApproving(true);
+      setApprovalError(null);
+
+      const token =
+        typeof window !== "undefined"
+          ? window.localStorage.getItem("grantiq_token")
+          : null;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/grantor/applications/approve_grant`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            application_id: selectedApplication.application_id,
+            approve_reason: approvalReason,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as {
+          message?: string;
+        };
+        throw new Error(data.message || "Failed to approve grant.");
+      }
+
+      setShowApprovalReasonModal(false);
+      setSelectedApplication(null);
+      setApprovalReason("");
+      setApprovalDeclaration(false);
+      // Reload applications
+      const updatedApplications = applications.map((app) =>
+        app.id === selectedApplication.id
+          ? { ...app, application_status: "grant_approved" }
+          : app
+      );
+      setApplications(updatedApplications);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Something went wrong.";
+      setApprovalError(message);
+    } finally {
+      setIsApproving(false);
+    }
+  };
 
   const categoryCounts = {
     SC: applications.filter((app) => getCategoryFromApplication(app) === "SC")
@@ -772,6 +900,24 @@ function RecommendationPageData() {
               >
                 ✕
               </button>
+              <div className="flex items-center gap-2">
+                {!verificationInProgress && (
+                  <button
+                    type="button"
+                    onClick={() => setShowApprovalConfirmation(true)}
+                    className="inline-flex items-center rounded-lg bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors"
+                  >
+                    ✓ Approve Grant
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedApplication(null)}
+                  className="text-white hover:text-white/80 text-lg px-2 py-1 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-5 max-h-[70vh] overflow-y-auto bg-slate-50">
@@ -1869,6 +2015,161 @@ function RecommendationPageData() {
                   applicant completes the academic section of the application.
                 </p>
               </section>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approval Confirmation Modal */}
+      {showApprovalConfirmation && selectedApplication && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white border border-slate-200 shadow-2xl">
+            <div className="px-6 py-4 border-b border-slate-200 bg-purple-50">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Confirm Grant Approval
+              </h3>
+              <p className="text-xs text-slate-600 mt-1">
+                You are about to approve the grant for{" "}
+                <span className="font-semibold">
+                  {selectedApplication.full_name}
+                </span>
+              </p>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <div className="rounded-lg bg-slate-50 p-3 space-y-2">
+                <p className="text-xs font-medium text-slate-700">
+                  Application Details:
+                </p>
+                <div className="text-xs text-slate-600 space-y-1">
+                  <div className="flex justify-between">
+                    <span>ID:</span>
+                    <span className="font-mono font-medium">
+                      {selectedApplication.application_id}
+                    </span>
+                  </div>
+                  {selectedApplication.recommendation_details?.zone && (
+                    <div className="flex justify-between">
+                      <span>Zone:</span>
+                      <span
+                        className={`font-semibold uppercase text-xs px-2 py-0.5 rounded ${
+                          selectedApplication.recommendation_details.zone ===
+                          "green"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : selectedApplication.recommendation_details
+                                .zone === "amber"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-rose-100 text-rose-700"
+                        }`}
+                      >
+                        {selectedApplication.recommendation_details.zone}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {approvalError && (
+                <div className="rounded-lg bg-rose-50 border border-rose-200 p-3">
+                  <p className="text-xs text-rose-700">{approvalError}</p>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-slate-200 flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowApprovalConfirmation(false)}
+                disabled={isApproving}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleApproveGrant}
+                disabled={isApproving}
+                className="rounded-lg bg-emerald-500 hover:bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {isApproving ? "Approving..." : "Yes, Approve"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approval Reason Modal for Non-Green Zones */}
+      {showApprovalReasonModal && selectedApplication && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl">
+            <div className="px-6 py-4 border-b border-slate-200 bg-amber-50">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Approval Reason Required
+              </h3>
+              <p className="text-xs text-slate-600 mt-1">
+                This application is in{" "}
+                <span className="font-semibold uppercase text-amber-700">
+                  {selectedApplication.recommendation_details?.zone} zone
+                </span>
+                . Please provide a reason for approval.
+              </p>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-2">
+                  Approval Reason
+                </label>
+                <textarea
+                  value={approvalReason}
+                  onChange={(e) => setApprovalReason(e.target.value)}
+                  placeholder="Enter the reason for approving this grant..."
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent resize-none"
+                  rows={4}
+                  disabled={isApproving}
+                />
+              </div>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={approvalDeclaration}
+                  onChange={(e) => setApprovalDeclaration(e.target.checked)}
+                  disabled={isApproving}
+                  className="mt-1 rounded border-slate-300 cursor-pointer"
+                />
+                <span className="text-xs text-slate-700">
+                  I am declaring that this grant should be approved despite the
+                  zone classification
+                </span>
+              </label>
+
+              {approvalError && (
+                <div className="rounded-lg bg-rose-50 border border-rose-200 p-3">
+                  <p className="text-xs text-rose-700">{approvalError}</p>
+                </div>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-slate-200 flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowApprovalReasonModal(false);
+                  setApprovalReason("");
+                  setApprovalDeclaration(false);
+                  setApprovalError(null);
+                }}
+                disabled={isApproving}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleApprovalWithReason}
+                disabled={
+                  isApproving || !approvalReason.trim() || !approvalDeclaration
+                }
+                className="rounded-lg bg-emerald-500 hover:bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              >
+                {isApproving ? "Approving..." : "Approve"}
+              </button>
             </div>
           </div>
         </div>

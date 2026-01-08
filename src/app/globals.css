@@ -36,3 +36,42 @@ body {
     radial-gradient(at 67% 94%, hsla(217,65%,73%,1) 0px, transparent 50%),
     radial-gradient(at 0% 98%, hsla(209,89%,60%,1) 0px, transparent 50%);
 }
+
+/* Slider styling */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-top: -6px;
+}
+
+input[type="range"].slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input[type="range"].slider:disabled::-webkit-slider-thumb {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+input[type="range"].slider:disabled::-moz-range-thumb {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
