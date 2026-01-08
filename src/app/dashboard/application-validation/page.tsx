@@ -10,6 +10,7 @@ type DashboardKPIs = {
   total_seats_available: number;
   total_applications_received: number;
   rejected_applications: number;
+  verification_in_progress: number;
 };
 
 type CourseLevelData = {
@@ -158,7 +159,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6">
           <p className="text-sm text-slate-600 mb-2">Total Seats Available</p>
           <p className="text-3xl font-semibold text-slate-900">
@@ -188,12 +189,26 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6">
-          <p className="text-sm text-slate-600 mb-2">Rejected Applications</p>
+          <p className="text-sm text-slate-600 mb-2">Verification Rejected</p>
           <p className="text-3xl font-semibold text-slate-900">
             {isLoading ? (
               <span className="text-slate-400">—</span>
             ) : dashboardData ? (
               dashboardData.kpis.rejected_applications
+            ) : (
+              "—"
+            )}
+          </p>
+        </div>
+        <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6">
+          <p className="text-sm text-slate-600 mb-2">
+            Verification In Progress
+          </p>
+          <p className="text-3xl font-semibold text-slate-900">
+            {isLoading ? (
+              <span className="text-slate-400">—</span>
+            ) : dashboardData ? (
+              dashboardData.kpis.verification_in_progress
             ) : (
               "—"
             )}

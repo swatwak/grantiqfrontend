@@ -250,6 +250,7 @@ function RejectionLogsContent() {
         ? aDate.getTime() - bDate.getTime()
         : bDate.getTime() - aDate.getTime();
     });
+  const rejectedCount = applications.length;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -261,6 +262,17 @@ function RejectionLogsContent() {
           <p className="text-sm text-slate-600 mt-1 max-w-xl">
             View and review all rejected scholarship applications with detailed
             validation results and rejection reasons.
+          </p>
+        </div>
+      </div>
+      {/* KPI Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-xl bg-white border border-rose-200 shadow-sm p-5">
+          <p className="text-xs uppercase tracking-wide text-rose-600 font-semibold mb-1">
+            Rejected Applications
+          </p>
+          <p className="text-3xl font-bold text-rose-700">
+            {isLoading ? "—" : rejectedCount ?? "—"}
           </p>
         </div>
       </div>
