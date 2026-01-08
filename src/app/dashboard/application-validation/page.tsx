@@ -152,7 +152,9 @@ export default function DashboardPage() {
           <span>
             <span className="font-medium">Current Status:</span>{" "}
             <span className="text-blue-600 font-medium">
-              Submission and verification in process
+              {verificationInProgress
+                ? "Submission and verification in process"
+                : "Verification completed"}
             </span>
           </span>
         </div>

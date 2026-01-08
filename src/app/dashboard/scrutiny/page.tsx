@@ -710,32 +710,6 @@ export default function ScrutinyPage() {
                         📋 Document Verification Results
                       </h3>
                       <div className="flex items-center gap-2">
-                        {/* <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${
-                            validationData.overall_eligible
-                              ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
-                              : validationData.overall_success
-                              ? "bg-amber-100 text-amber-700 border border-amber-300"
-                              : "bg-rose-100 text-rose-700 border border-rose-300"
-                          }`}
-                        >
-                          {validationData.overall_eligible ? (
-                            <>
-                              <span className="text-sm">✓</span>
-                              All Verified & Eligible
-                            </>
-                          ) : validationData.overall_success ? (
-                            <>
-                              <span className="text-sm">⚠</span>
-                              Manual Review Required
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-sm">✗</span>
-                              Issues Found
-                            </>
-                          )}
-                        </span> */}
                         <button
                           type="button"
                           onClick={handleFetchVerification}
@@ -1042,7 +1016,8 @@ export default function ScrutinyPage() {
                             if (!Array.isArray(docData) || docData.length === 0)
                               return null;
                             const latest = docData[docData.length - 1];
-                            const verificationValue = latest?.result?.verification; 
+                            const verificationValue =
+                              latest?.result?.verification;
                             // true | false | null
 
                             const verificationState =
@@ -1057,7 +1032,6 @@ export default function ScrutinyPage() {
                             const verificationType =
                               latest?.verification_type || "Unknown";
                             const source = latest?.result?.source || null;
-
 
                             return (
                               <div
@@ -1076,36 +1050,35 @@ export default function ScrutinyPage() {
                                       {getDocumentTypeLabel(docType)}
                                     </h4>
                                     <span
-                                    className={`inline-flex items-center gap-1 text-[10px] font-bold ${
-                                      verificationState === "verified"
-                                        ? "text-emerald-700"
-                                        : verificationState === "failed"
-                                        ? "text-rose-700"
-                                        : "text-amber-700"
-                                    }`}
-                                  >
-                                    {verificationState === "verified" && (
-                                      <>
-                                        <span>✓</span>
-                                        <span>VERIFIED</span>
-                                      </>
-                                    )}
+                                      className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                                        verificationState === "verified"
+                                          ? "text-emerald-700"
+                                          : verificationState === "failed"
+                                          ? "text-rose-700"
+                                          : "text-amber-700"
+                                      }`}
+                                    >
+                                      {verificationState === "verified" && (
+                                        <>
+                                          <span>✓</span>
+                                          <span>VERIFIED</span>
+                                        </>
+                                      )}
 
-                                    {verificationState === "failed" && (
-                                      <>
-                                        <span>✗</span>
-                                        <span>NOT VERIFIED</span>
-                                      </>
-                                    )}
+                                      {verificationState === "failed" && (
+                                        <>
+                                          <span>✗</span>
+                                          <span>NOT VERIFIED</span>
+                                        </>
+                                      )}
 
-                                    {verificationState === "inprogress" && (
-                                      <>
-                                        <span>⏳</span>
-                                        <span>IN PROGRESS</span>
-                                      </>
-                                    )}
-                                  </span>
-
+                                      {verificationState === "inprogress" && (
+                                        <>
+                                          <span>⏳</span>
+                                          <span>IN PROGRESS</span>
+                                        </>
+                                      )}
+                                    </span>
                                   </div>
                                   <p className="text-[10px] text-slate-600 mt-1">
                                     {verificationType}
@@ -1123,23 +1096,25 @@ export default function ScrutinyPage() {
                                       </p>
                                     </div>
                                   )}
-                                  {!reason && verificationState === "failed" && (
+                                  {!reason &&
+                                    verificationState === "failed" && (
+                                      <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+                                        <p className="text-xs text-slate-600">
+                                          Verification failed. No specific
+                                          reason provided.
+                                        </p>
+                                      </div>
+                                    )}
+                                  {source && (
                                     <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
-                                      <p className="text-xs text-slate-600">
-                                        Verification failed. No specific reason provided.
+                                      <p className="text-[10px] font-semibold text-slate-600 mb-1">
+                                        Verified Source:
+                                      </p>
+                                      <p className="text-xs text-slate-700">
+                                        {source}
                                       </p>
                                     </div>
                                   )}
-                                  {source && (
-                                  <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
-                                    <p className="text-[10px] font-semibold text-slate-600 mb-1">
-                                      Verified Source:
-                                    </p>
-                                    <p className="text-xs text-slate-700">
-                                      {source}
-                                    </p>
-                                  </div>
-                                )}
 
                                   {Object.keys(dataReceived).length > 0 && (
                                     <div className="space-y-1.5">
