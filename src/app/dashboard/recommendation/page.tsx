@@ -27,6 +27,7 @@ type RecommendationDetails = {
   qualifyingDegreePercentage: number | null;
   finalRank: number | null;
   scoreBreakdown: ScoreBreakdown | null;
+  zone: "green" | "amber" | "red" | null;
 };
 
 type ApiApplication = {
@@ -398,7 +399,15 @@ function ScrutinyPage() {
                   <tr
                     key={application.id}
                     className={`border-t border-slate-100 ${
-                      index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                      verificationInProgress
+                        ? index % 2 === 0
+                          ? "bg-white"
+                          : "bg-slate-50"
+                        : application.recommendation_details?.zone === "green"
+                        ? "bg-emerald-50"
+                        : application.recommendation_details?.zone === "amber"
+                        ? "bg-amber-50"
+                        : "bg-rose-50"
                     }`}
                   >
                     {!verificationInProgress && (
