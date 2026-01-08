@@ -16,11 +16,7 @@ const navItems = [
     href: "/dashboard/application-validation",
   },
   {
-    label: "Scrutiny",
-    href: "/dashboard/scrutiny",
-  },
-  {
-    label: "Recommendation",
+    label: "Application Summary",
     href: "/dashboard/recommendation",
     disabled: false,
   },
@@ -147,7 +143,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               }`}
             >
               <span>EnrollIQ Rejection Logs</span>
-              <span className="text-[10px] uppercase tracking-wide">Active</span>
+              <span className="text-[10px] uppercase tracking-wide">
+                Active
+              </span>
             </button>
 
             <div className="text-xs text-slate-600 flex items-center justify-between">
