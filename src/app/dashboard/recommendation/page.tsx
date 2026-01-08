@@ -893,13 +893,6 @@ function RecommendationPageData() {
               >
                 Download PDF
               </button>
-              <button
-                type="button"
-                onClick={() => setSelectedApplication(null)}
-                className="text-white hover:text-white/80 text-lg px-2 py-1 rounded-lg hover:bg-white/10 transition-colors"
-              >
-                ✕
-              </button>
               <div className="flex items-center gap-2">
                 {!verificationInProgress && (
                   <button
