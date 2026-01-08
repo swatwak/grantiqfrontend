@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { statusStyles } from "../rejection-logs/page";
+import { Suspense } from "react";
 type ApiApplicationStatus = string;
 
 type ScoreBreakdown = {
@@ -108,7 +109,7 @@ function getCategoryFromApplication(application: ApiApplication): CategoryType {
   return "Open";
 }
 
-export default function ScrutinyPage() {
+function ScrutinyPage() {
   const [applications, setApplications] = useState<ApiApplication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1165,5 +1166,13 @@ export default function ScrutinyPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RecommendationPage() {
+  return (
+    <Suspense fallback={<div>Loading recommendations...</div>}>
+      <ScrutinyPage />
+    </Suspense>
   );
 }
