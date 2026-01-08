@@ -74,6 +74,27 @@ export default function EngineRulesPage() {
       age: 5,
     }
   );
+
+  const [verificationInProgress, setVerificationInProgress] = useState<
+    boolean | null
+  >(null);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("verificationInProgress");
+    setVerificationInProgress(stored === "true");
+  }, []);
+
+  // Persist to localStorage
+  useEffect(() => {
+    if (verificationInProgress !== null) {
+      localStorage.setItem(
+        "verificationInProgress",
+        verificationInProgress.toString()
+      );
+    }
+  }, [verificationInProgress]);
+
   useEffect(() => {
     const fetchCourseConfig = async () => {
       try {
@@ -886,6 +907,30 @@ export default function EngineRulesPage() {
           </div>
         )}
       </div>
+      <label className="flex items-center gap-3 cursor-pointer">
+        <span className="text-gray-500">Verification In Progress</span>
+
+        <div className="relative">
+          <input
+            type="checkbox"
+            checked={verificationInProgress ?? false}
+            onChange={(e) => setVerificationInProgress(e.target.checked)}
+            className="sr-only"
+          />
+
+          <div
+            className={`w-11 h-6 rounded-full transition ${
+              verificationInProgress ? "bg-green-500" : "bg-gray-300"
+            }`}
+          />
+
+          <div
+            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+              verificationInProgress ? "translate-x-5" : ""
+            }`}
+          />
+        </div>
+      </label>
     </div>
   );
 }

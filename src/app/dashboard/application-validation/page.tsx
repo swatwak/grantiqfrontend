@@ -47,6 +47,24 @@ export default function DashboardPage() {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [verificationInProgress, setVerificationInProgress] = useState<
+    boolean | null
+  >(null);
+
+  useEffect(() => {
+    setVerificationInProgress(
+      localStorage.getItem("verificationInProgress") === "true"
+    );
+  }, []);
+
+  useEffect(() => {
+    if (verificationInProgress !== null) {
+      localStorage.setItem(
+        "verificationInProgress",
+        String(verificationInProgress)
+      );
+    }
+  }, [verificationInProgress]);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -106,7 +124,9 @@ export default function DashboardPage() {
           seatsAvailable: levelData.total_seats,
           applicationsReceived: levelData.total_applications,
           seatsGranted: 0, // Default to 0 as per image
-          status: "Submission Open", // Default status as per image
+          status: verificationInProgress
+            ? "Submission Open"
+            : "Submission Closed", // Default status as per image
         }))
       )
     : [];
@@ -123,7 +143,9 @@ export default function DashboardPage() {
             <span className="font-medium">Academic Year:</span> 2026-27
           </span>
           <span>
-            <span className="font-medium">Last Date of Application Submission:</span>{" "}
+            <span className="font-medium">
+              Last Date of Application Submission:
+            </span>{" "}
             31/03/2026
           </span>
           <span>
@@ -212,7 +234,11 @@ export default function DashboardPage() {
                   </th>
                   <th className="px-6 py-3 font-semibold">Seats Granted</th>
                   <th className="px-6 py-3 font-semibold">Status</th>
-                  <th className="px-6 py-3 font-semibold text-right">Action</th>
+                  {!verificationInProgress && (
+                    <th className="px-6 py-3 font-semibold text-right">
+                      Action
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -236,27 +262,38 @@ export default function DashboardPage() {
                     <td className="px-6 py-4 text-slate-700">
                       {row.seatsGranted}
                     </td>
-                    <td className="px-6 py-4">
+                    <td
+                      onClick={() => {
+                        router.push(
+                          `/dashboard/recommendation?courseType=${encodeURIComponent(
+                            row.level
+                          )}&courseField=${encodeURIComponent(row.course)}`
+                        );
+                      }}
+                      className="px-6 py-4 cursor-pointer"
+                    >
                       <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-green-700 border border-green-200">
                         {row.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Navigate to recommendation page with course and level filters
-                          router.push(
-                            `/dashboard/recommendation?course=${encodeURIComponent(
-                              row.course
-                            )}&level=${encodeURIComponent(row.level)}`
-                          );
-                        }}
-                        className="inline-flex items-center rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white transition-colors"
-                      >
-                        View Recommendation
-                      </button>
-                    </td>
+                    {!verificationInProgress && (
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Navigate to recommendation page with course and level filters
+                            router.push(
+                              `/dashboard/recommendation?courseType=${encodeURIComponent(
+                                row.level
+                              )}&courseField=${encodeURIComponent(row.course)}`
+                            );
+                          }}
+                          className="inline-flex items-center rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white transition-colors"
+                        >
+                          View Recommendation
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

@@ -70,28 +70,6 @@ const API_BASE_URL =
 
 type CategoryType = "SC" | "ST" | "Minority" | "Open" | "all";
 
-function statusStyles(status: ApiApplicationStatus) {
-  const normalized = status.toLowerCase();
-
-  if (normalized === "draft" || normalized === "pending") {
-    return "bg-amber-500/15 text-amber-300 border border-amber-400/40";
-  }
-
-  if (normalized === "under_review" || normalized === "under review") {
-    return "bg-sky-500/15 text-sky-300 border border-sky-400/40";
-  }
-
-  if (normalized === "approved") {
-    return "bg-emerald-500/15 text-emerald-300 border border-emerald-400/40";
-  }
-
-  if (normalized === "rejected") {
-    return "bg-rose-500/15 text-rose-300 border border-rose-400/40";
-  }
-
-  return "bg-slate-500/15 text-slate-200 border border-slate-400/40";
-}
-
 function formatDate(value: string) {
   if (!value) return "—";
   const date = new Date(value);

@@ -65,7 +65,7 @@ type ApiResponse = {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 
-function statusStyles(status: ApiApplicationStatus) {
+export function statusStyles(status: ApiApplicationStatus) {
   const normalized = status.toLowerCase();
 
   if (normalized === "in_progress") {
@@ -962,4 +962,3 @@ export default function RejectionLogsPage() {
     </Suspense>
   );
 }
-
