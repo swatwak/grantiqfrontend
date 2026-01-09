@@ -53,6 +53,22 @@ export default function EngineRulesPage() {
   const [courseConfig, setCourseConfig] = useState<CourseConfig[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
 
+  type ConfirmState = {
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  };
+
+  const [confirmState, setConfirmState] = useState<ConfirmState>({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+
   // Load from localStorage with lazy initializer
   const [dataConfig, setDataConfig] = useState<DataConfig>(() => {
     if (typeof window !== "undefined") {
@@ -110,7 +126,9 @@ export default function EngineRulesPage() {
   });
   const [showTieBreakerModal, setShowTieBreakerModal] = useState(false);
 
-  const [activeCourseType, setActiveCourseType] = useState<string | null>(null);
+  const [activeCourseType, setActiveCourseType] = useState<string | null>(
+    "M.S"
+  );
 
   // Min and max limits for each weightage field
   const weightageLimits: Record<keyof Weightage, { min: number; max: number }> =
@@ -301,25 +319,27 @@ export default function EngineRulesPage() {
     const range = getAllowedRange(field);
 
     if (value < range.min || value > range.max) {
-      alert(
-        `"${field}" can only be set between ${range.min} and ${range.max}\n` +
-          `to keep total = 100`
+      setAlertMessage(
+        `"${field}" can only be set between ${range.min} and ${range.max} to keep total = 100`
       );
       return;
     }
 
-    const ok = window.confirm(
-      `Lock "${field}" at ${value}?\n\n` +
+    setConfirmState({
+      open: true,
+      title: "Confirm Lock",
+      message:
+        `Lock "${field}" at ${value}?\n\n` +
         `Allowed range: ${range.min} – ${range.max}\n` +
-        `Reset required to change again.`
-    );
-
-    if (!ok) return;
-
-    const nextLocked = { ...lockedFields, [field]: true };
-    const nextWeights = { ...editedGlobalWeightage, [field]: value };
-
-    redistribute(nextLocked, nextWeights);
+        `Reset required to change again.`,
+      onConfirm: () => {
+        const nextLocked = { ...lockedFields, [field]: true };
+        const nextWeights = { ...editedGlobalWeightage, [field]: value };
+        redistribute(nextLocked, nextWeights);
+        setConfirmState((s) => ({ ...s, open: false }));
+      },
+    });
+    return;
   };
 
   const cancelEdit = () => {
@@ -345,7 +365,7 @@ export default function EngineRulesPage() {
         editedGlobalWeightage.age;
 
       if (total !== 100) {
-        alert(`Total weightage must equal 100 (current: ${total})`);
+        setAlertMessage(`Total weightage must equal 100 (current: ${total})`);
         return false;
       }
     } else {
@@ -360,7 +380,7 @@ export default function EngineRulesPage() {
             course.weightage.age;
 
           if (total !== 100) {
-            alert(
+            setAlertMessage(
               `Weightage for ${group.course_type} - ${course.course_field} must total 100 (current: ${total})`
             );
             return false;
@@ -406,7 +426,7 @@ export default function EngineRulesPage() {
           setGlobalWeightage(editedGlobalWeightage);
         }
       } else {
-        alert("Failed to save course rules");
+        setAlertMessage("Failed to save course rules");
         return;
       }
       // Update dataConfig and save to localStorage
@@ -414,10 +434,10 @@ export default function EngineRulesPage() {
       setDataConfig(updatedDataConfig);
       localStorage.setItem("dataConfig", JSON.stringify(updatedDataConfig));
       setIsEditing(false);
-      alert("Rules updated successfully");
+      setAlertMessage("Rules updated successfully");
     } catch (err) {
       console.error(err);
-      alert("Save failed");
+      setAlertMessage("Save failed");
     }
   };
 
@@ -522,32 +542,6 @@ export default function EngineRulesPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-sm text-slate-600">
-                Verification In Progress
-              </span>
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={verificationInProgress ?? false}
-                  onChange={(e) => {
-                    setVerificationInProgress(e.target.checked);
-                    localStorage.removeItem("run_recommendation_data");
-                  }}
-                  className="sr-only"
-                />
-                <div
-                  className={`w-11 h-6 rounded-full transition ${
-                    verificationInProgress ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                />
-                <div
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                    verificationInProgress ? "translate-x-5" : ""
-                  }`}
-                />
-              </div>
-            </label>
             {!isEditing ? (
               <button
                 onClick={startEdit}
@@ -609,77 +603,6 @@ export default function EngineRulesPage() {
             </button>
           </nav>
         </div>
-
-        {/* Tab Content - Scrollable Container */}
-        {/* <div className="flex-1 min-h-0 max-h-full rounded-xl bg-white border border-slate-400 shadow-sm overflow-hidden flex flex-col"> */}
-        {/* Tab A: Number of Seats */}
-        {/* {activeTab === "seats" && (
-            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              <div className="flex-shrink-0 px-6 py-4 border-b border-slate-400 bg-slate-50">
-                <h2 className="text-lg font-semibold text-slate-900">
-                  Seats Allocation
-                </h2>
-                <p className="text-sm text-slate-600">
-                  Configure the number of seats available for each course
-                </p>
-              </div>
-
-              <div className="flex-1 min-h-0 overflow-auto px-4 py-4">
-                <table className="w-full table-fixed border-collapse text-xs">
-                  <thead className="bg-slate-400 sticky top-0 z-10">
-                    <tr>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold w-1/4">
-                        Course Type
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold">
-                        Course Field
-                      </th>
-                      <th className="px-4 py-2.5 text-right text-xs font-semibold w-24">
-                        Seats
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-slate-200 text-slate-800">
-                    {(isEditing ? editedConfig : courseConfig).map((group) =>
-                      group.data.map((course, cIndex) => (
-                        <tr key={`${group.course_type}-${course.course_field}`}>
-                          {cIndex === 0 && (
-                            <td
-                              rowSpan={group.data.length}
-                              className="px-4 py-2.5 font-medium bg-slate-50 align-top text-slate-900 text-xs"
-                            >
-                              {group.course_type}
-                            </td>
-                          )}
-
-                          <td className="px-4 py-2.5 text-xs">
-                            {course.course_field}
-                          </td>
-
-                          <td className="px-4 py-2.5 text-xs text-right">
-                            {isEditing ? (
-                              <input
-                                type="number"
-                                className="w-20 rounded border border-slate-400 px-2 py-1 text-xs text-right text-slate-900 font-medium"
-                                value={course.seats}
-                                onChange={(e) => {
-                                  course.seats = Number(e.target.value);
-                                  setEditedConfig([...editedConfig]);
-                                }}
-                              />
-                            ) : (
-                              course.seats
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )} */}
 
         {activeTab === "seats" && (
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden w-[60%] mt-4">
@@ -903,7 +826,7 @@ export default function EngineRulesPage() {
               <div className="flex flex-col">
                 <div className="pr-2 space-y-3">
                   <div className="bg-white border border-slate-200 rounded p-3 space-y-2">
-                    <label className="block text-[10px] font-medium text-slate-900 leading-tight">
+                    <label className="block text-sm font-medium text-slate-900 leading-tight">
                       Q1. What weightage should be given to academic performance
                       (More qualifying degree marks more weightage)?
                     </label>
@@ -925,7 +848,7 @@ export default function EngineRulesPage() {
                   </div>
 
                   <div className="bg-white border border-slate-200 rounded p-3 space-y-2">
-                    <label className="block text-[10px] font-medium text-slate-900 leading-tight">
+                    <label className="block text-sm font-medium text-slate-900 leading-tight">
                       Q2. What weightage should be given to family income (lower
                       income = higher score)?
                     </label>
@@ -947,7 +870,7 @@ export default function EngineRulesPage() {
                   </div>
 
                   <div className="bg-white border border-slate-200 rounded p-3 space-y-2">
-                    <label className="block text-[10px] font-medium text-slate-900 leading-tight">
+                    <label className="block text-sm font-medium text-slate-900 leading-tight">
                       Q3. What weightage should be given to university ranking
                       or accreditation (More the Rank of university more score)?
                     </label>
@@ -969,7 +892,7 @@ export default function EngineRulesPage() {
                   </div>
 
                   <div className="bg-white border border-slate-200 rounded p-3 space-y-2">
-                    <label className="block text-[10px] font-medium text-slate-900 leading-tight">
+                    <label className="block text-sm font-medium text-slate-900 leading-tight">
                       Q4. What weightage should be given to course type or
                       course priority (PhD is more preffered than M.S)?
                     </label>
@@ -991,7 +914,7 @@ export default function EngineRulesPage() {
                   </div>
 
                   <div className="bg-white border border-slate-200 rounded p-3 space-y-2">
-                    <label className="block text-[10px] font-medium text-slate-900 leading-tight">
+                    <label className="block text-sm font-medium text-slate-900 leading-tight">
                       Q5. What weightage should be given to first time
                       beneficiary?
                     </label>
@@ -1013,7 +936,7 @@ export default function EngineRulesPage() {
                   </div>
 
                   <div className="bg-white border border-slate-200 rounded p-3 space-y-2">
-                    <label className="block text-[10px] font-medium text-slate-900 leading-tight">
+                    <label className="block text-sm font-medium text-slate-900 leading-tight">
                       Q6. What weightage should be given to age (priority shall
                       be given to candidates who are closer to the upper age
                       limit prescribed under the scheme)?
@@ -1034,24 +957,6 @@ export default function EngineRulesPage() {
                       max={weightageLimits.age.max}
                     />
                   </div>
-
-                  {/* <div className="pt-2 border-t border-slate-300 sticky bottom-0 bg-white pb-1">
-                    <div className="flex items-center justify-between bg-slate-50 rounded px-2 py-1.5">
-                      <span className="text-xs font-semibold text-slate-900">
-                        Total Weightage:
-                      </span>
-                      <span
-                        className={`text-sm font-bold ${
-                          calculateWeightageScore() === 100
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {Math.round(calculateWeightageScore())}
-                        /100
-                      </span>
-                    </div>
-                  </div> */}
 
                   <button
                     disabled={!isEditing}
@@ -1193,12 +1098,84 @@ export default function EngineRulesPage() {
                     )}
                   </div>
                 </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-sm text-slate-600">
+                    Initiate Recommendation
+                  </span>
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={verificationInProgress ?? false}
+                      onChange={(e) => {
+                        setVerificationInProgress(e.target.checked);
+                        localStorage.removeItem("run_recommendation_data");
+                      }}
+                      className="sr-only"
+                    />
+                    <div
+                      className={`w-11 h-6 rounded-full transition ${
+                        !verificationInProgress ? "bg-green-500" : "bg-gray-300"
+                      }`}
+                    />
+                    <div
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                        !verificationInProgress ? "translate-x-5" : ""
+                      }`}
+                    />
+                  </div>
+                </label>
               </div>
             </div>
           </div>
         )}
         {/* </div> */}
       </div>
+      {alertMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg p-5 w-[360px] shadow-lg">
+            <h3 className="text-sm font-semibold text-slate-900 mb-2">
+              Attention
+            </h3>
+            <p className="text-sm text-slate-700 mb-4 whitespace-pre-line">
+              {alertMessage}
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setAlertMessage(null)}
+                className="px-4 py-1.5 rounded bg-blue-600 text-white text-sm"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmState.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg p-5 w-[380px] shadow-lg">
+            <h3 className="text-sm font-semibold text-slate-900 mb-2">
+              {confirmState.title}
+            </h3>
+            <p className="text-sm text-slate-700 mb-4 whitespace-pre-line">
+              {confirmState.message}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmState((s) => ({ ...s, open: false }))}
+                className="px-4 py-1.5 rounded border text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmState.onConfirm}
+                className="px-4 py-1.5 rounded bg-green-600 text-white text-sm"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
