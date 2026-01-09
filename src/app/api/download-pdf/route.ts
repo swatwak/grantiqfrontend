@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { drawApplicationTables } from "./helper";
 
 // Initialize S3Client only if credentials are available
 function getS3Client(): S3Client | null {
@@ -76,69 +77,21 @@ export async function POST(req: Request) {
         key: `enroll_iq_files/submission_files/${applicationId}/documents/graduation/graduation.pdf`,
         name: "Graduation Certificate",
       },
-      {
-        key: `enroll_iq_files/submission_files/${applicationId}/documents/offer_letter/offerLetter.pdf`,
-        name: "Offer Letter",
-      },
-      {
-        key: `enroll_iq_files/submission_files/${applicationId}/documents/bank_passbook/bankPassbook.pdf`,
-        name: "Bank Passbook",
-      },
-      {
-        key: `enroll_iq_files/submission_files/${applicationId}/documents/statement_of_purpose/statementOfPurpose.pdf`,
-        name: "Statement of Purpose",
-      },
-      {
-        key: `enroll_iq_files/submission_files/${applicationId}/documents/cv/cv.pdf`,
-        name: "Curriculum Vitae",
-      },
+      // {
+      //   key: `enroll_iq_files/submission_files/${applicationId}/documents/offer_letter/offerLetter.pdf`,
+      //   name: "Offer Letter",
+      // }
     ];
 
+    // const finalPdf = await PDFDocument.create();
     const finalPdf = await PDFDocument.create();
+    await drawApplicationTables(finalPdf, data);
     const font = await finalPdf.embedFont(StandardFonts.Helvetica);
 
-    /* -----------------------------
-       PAGE 1: DATA SUMMARY
-    ------------------------------*/
-    const page = finalPdf.addPage();
-    const { width, height } = page.getSize();
+    const pages = finalPdf.getPages();
+    const lastPage = pages[pages.length - 1];
 
-    let y = height - 50;
-    page.drawText("Application Summary", {
-      x: 50,
-      y,
-      size: 18,
-      font,
-    });
-
-    y -= 40;
-    page.drawText(`Name: ${data.full_name || data.name || "N/A"}`, {
-      x: 50,
-      y,
-      size: 12,
-      font,
-    });
-    y -= 20;
-    page.drawText(
-      `Application ID: ${
-        data.application_id || data.applicationId || applicationId
-      }`,
-      {
-        x: 50,
-        y,
-        size: 12,
-        font,
-      }
-    );
-    y -= 20;
-    if (data.merit_score !== undefined || data.score !== undefined) {
-      page.drawText(`Score: ${data.merit_score || data.score || "N/A"}`, {
-        x: 50,
-        y,
-        size: 12,
-        font,
-      });
-    }
+    const { width, height } = lastPage.getSize();
 
     /* -----------------------------
        ATTACH S3 PDFs
@@ -185,7 +138,19 @@ export async function POST(req: Request) {
 
     const pdfBytes = await finalPdf.save();
 
-    return new NextResponse(pdfBytes, {
+    const arrayBuffer =
+      pdfBytes.buffer instanceof ArrayBuffer
+        ? pdfBytes.buffer.slice(
+            pdfBytes.byteOffset,
+            pdfBytes.byteOffset + pdfBytes.byteLength
+          )
+        : new Uint8Array(pdfBytes).buffer;
+
+    const blob = new Blob([arrayBuffer], {
+      type: "application/pdf",
+    });
+
+    return new NextResponse(blob, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="application-${applicationId}.pdf"`,
