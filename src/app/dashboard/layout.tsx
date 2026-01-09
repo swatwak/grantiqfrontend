@@ -125,9 +125,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   } ${item.disabled ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
                   <span>{item.label}</span>
-                  <span className="text-[10px] uppercase tracking-wide">
+                  {/* <span className="text-[10px] uppercase tracking-wide">
                     {item.disabled ? "Coming soon" : "Active"}
-                  </span>
+                  </span> */}
                 </button>
               );
             })}
@@ -144,9 +144,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               }`}
             >
               <span>EnrollIQ Rejection Logs</span>
-              <span className="text-[10px] uppercase tracking-wide">
+              {/* <span className="text-[10px] uppercase tracking-wide">
                 Active
-              </span>
+              </span> */}
             </button>
 
             <div className="text-xs text-slate-600 flex items-center justify-between">

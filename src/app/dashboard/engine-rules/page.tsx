@@ -629,7 +629,7 @@ export default function EngineRulesPage() {
         <div className="flex-shrink-0 flex items-center justify-between gap-4 mb-4">
           <div className="flex-1">
             <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
-              Engine Rules
+              Configuration Utility
             </h1>
             <p className="text-sm text-slate-700 mt-1 max-w-xl">
               Configure and manage the decision rules that power GrantIQ&apos;s
@@ -645,7 +645,10 @@ export default function EngineRulesPage() {
                 <input
                   type="checkbox"
                   checked={verificationInProgress ?? false}
-                  onChange={(e) => setVerificationInProgress(e.target.checked)}
+                  onChange={(e) => {
+                    setVerificationInProgress(e.target.checked);
+                    localStorage.removeItem("run_recommendation_data");
+                  }}
                   className="sr-only"
                 />
                 <div
@@ -697,7 +700,7 @@ export default function EngineRulesPage() {
                   : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
               }`}
             >
-              Number of Seats
+              Seats Allocation
             </button>
             <button
               onClick={() => setActiveTab("weightage")}
@@ -729,7 +732,7 @@ export default function EngineRulesPage() {
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
               <div className="flex-shrink-0 px-6 py-4 border-b border-slate-400 bg-slate-50">
                 <h2 className="text-lg font-semibold text-slate-900">
-                  Number of Seats
+                  Seats Allocation
                 </h2>
                 <p className="text-sm text-slate-600">
                   Configure the number of seats available for each course

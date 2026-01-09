@@ -191,7 +191,6 @@ function RecommendationPageData() {
   const [courseConfig, setCourseConfig] = useState<CourseConfig[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
 
-
   // Accordion state management
   const [accordionState, setAccordionState] = useState({
     verificationResults: true, // Default open when toggle is ON
@@ -721,7 +720,7 @@ function RecommendationPageData() {
             <strong>Course Field</strong> to view rankings.
           </div>
         )}
-
+        Course Level
         {courseFields.map((f) => (
           <button
             key={f.value}
@@ -784,16 +783,15 @@ function RecommendationPageData() {
                   {!verificationInProgress && (
                     <th className="px-5 py-3 font-semibold">Rank</th>
                   )}
-                  <th className="px-5 py-3 font-semibold">Applicant Name</th>
                   <th className="px-5 py-3 font-semibold">Application ID</th>
-                  <th className="px-5 py-3 font-semibold">Category</th>
+                  <th className="px-5 py-3 font-semibold">Applicant Name</th>
                   {!verificationInProgress && (
                     <th className="px-5 py-3 font-semibold">Weightage Score</th>
                   )}
                   <th className="px-5 py-3 font-semibold">Submitted At</th>
                   <th className="px-5 py-3 font-semibold text-right">Status</th>
                   <th className="px-5 py-3 font-semibold text-right">
-                    Actions
+                    File Detail
                   </th>
                 </tr>
               </thead>
@@ -818,17 +816,13 @@ function RecommendationPageData() {
                         {application.finalRank || "—"}
                       </td>
                     )}
-                    <td className="px-5 py-3 text-slate-900">
-                      {application.full_name || "—"}
-                    </td>
                     <td className="px-5 py-3 text-slate-600 font-mono text-[13px]">
                       {application.application_id.slice(-6).toUpperCase()}
                     </td>
-                    <td className="px-5 py-3 text-slate-600 text-xs">
-                      <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                        {getCategoryFromApplication(application)}
-                      </span>
+                    <td className="px-5 py-3 text-slate-900">
+                      {application.full_name || "—"}
                     </td>
+
                     {!verificationInProgress && (
                       <td className="px-5 py-3 text-slate-900 font-medium">
                         {application.recommendation_details?.scoreBreakdown
@@ -2265,7 +2259,9 @@ function RecommendationPageData() {
                   <div className="flex justify-between">
                     <span>ID:</span>
                     <span className="font-mono font-medium">
-                      {selectedApplication.application_id.slice(-6).toUpperCase()}
+                      {selectedApplication.application_id
+                        .slice(-6)
+                        .toUpperCase()}
                     </span>
                   </div>
                   {selectedApplication.recommendation_details?.zone && (

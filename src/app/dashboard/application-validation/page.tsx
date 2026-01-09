@@ -11,6 +11,7 @@ type DashboardKPIs = {
   total_applications_received: number;
   rejected_applications: number;
   verification_in_progress: number;
+  grant_approved: number;
 };
 
 type CourseLevelData = {
@@ -51,6 +52,23 @@ export default function DashboardPage() {
   const [verificationInProgress, setVerificationInProgress] = useState<
     boolean | null
   >(null);
+
+  const [runningRecom, setRunningRecom] = useState<Set<string>>(new Set());
+
+  const getRunRecomData = (): string[] => {
+    if (typeof window === "undefined") return [];
+    try {
+      return JSON.parse(
+        localStorage.getItem("run_recommendation_data") ?? "[]"
+      );
+    } catch {
+      return [];
+    }
+  };
+
+  const setRunRecomDataLS = (data: string[]) => {
+    localStorage.setItem("run_recommendation_data", JSON.stringify(data));
+  };
 
   useEffect(() => {
     setVerificationInProgress(
@@ -124,12 +142,9 @@ export default function DashboardPage() {
 
           if (!verificationInProgress) {
             status = "Verification Completed";
-          }
-          else if (level === "PhD" && course === "Management") {
+          } else if (level === "PhD" && course === "Management") {
             status = "Verification Completed";
-          }
-          
-          else {
+          } else {
             status = "Verification In Progress";
           }
 
@@ -138,19 +153,21 @@ export default function DashboardPage() {
             level,
             seatsAvailable: levelData.total_seats,
             applicationsReceived: levelData.total_applications,
-            seatsGranted: 0, 
+            seatsGranted: 0,
             status,
           };
         })
       )
     : [];
 
+  const completedRecombinations = new Set<string>(getRunRecomData());
+
   return (
     <div className="max-w-7xl mx-auto flex flex-col h-[calc(100vh-7rem)]">
       {/* Header */}
       <div className="flex-shrink-0 mb-6">
         <h1 className="text-2xl md:text-3xl font-semibold text-slate-900">
-          Foreign Scholarship Dashboard
+          Foreign Scholarship Year 2026-27 Dashboard
         </h1>
         <div className="mt-3 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center gap-4 text-sm text-slate-700">
           <span>
@@ -215,22 +232,28 @@ export default function DashboardPage() {
             )}
           </p>
         </div>
-        <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6">
-          <p className="text-sm text-slate-600 mb-2">
-            {verificationInProgress
-              ? "Verification In Progress"
-              : "Verification Completed"}
-          </p>
-          <p className="text-3xl font-semibold text-slate-900">
-            {isLoading ? (
-              <span className="text-slate-400">—</span>
-            ) : dashboardData ? (
-              dashboardData.kpis.verification_in_progress
-            ) : (
-              "—"
-            )}
-          </p>
-        </div>
+        {
+          <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6">
+            <p className="text-sm text-slate-600 mb-2">
+              {verificationInProgress
+                ? "Verification In Progress"
+                : "Grant Approved"}
+            </p>
+            <p className="text-3xl font-semibold text-slate-900">
+              {isLoading ? (
+                <span className="text-slate-400">—</span>
+              ) : dashboardData ? (
+                verificationInProgress ? (
+                  dashboardData.kpis.verification_in_progress
+                ) : (
+                  dashboardData.kpis.grant_approved
+                )
+              ) : (
+                "—"
+              )}
+            </p>
+          </div>
+        }
       </div>
 
       {/* Course-wise Table */}
@@ -318,20 +341,59 @@ export default function DashboardPage() {
                     </td>
                     {!verificationInProgress && (
                       <td className="px-6 py-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            // Navigate to recommendation page with course and level filters
-                            router.push(
-                              `/dashboard/recommendation?courseType=${encodeURIComponent(
-                                row.level
-                              )}&courseField=${encodeURIComponent(row.course)}`
+                        {(() => {
+                          const key = `${row.level}:${row.course}`;
+                          const isCompleted = completedRecombinations.has(key);
+                          const isRunning = runningRecom.has(key);
+
+                          if (isCompleted) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/recommendation?courseType=${encodeURIComponent(
+                                      row.level
+                                    )}&courseField=${encodeURIComponent(
+                                      row.course
+                                    )}`
+                                  )
+                                }
+                                className="inline-flex items-center rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white transition-colors"
+                              >
+                                View Recommendation
+                              </button>
                             );
-                          }}
-                          className="inline-flex items-center rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white transition-colors"
-                        >
-                          View Recommendation
-                        </button>
+                          }
+
+                          return (
+                            <button
+                              type="button"
+                              disabled={isRunning}
+                              onClick={() => {
+                                setRunningRecom((prev) =>
+                                  new Set(prev).add(key)
+                                );
+
+                                setTimeout(() => {
+                                  setRunningRecom((prev) => {
+                                    const next = new Set(prev);
+                                    next.delete(key);
+                                    return next;
+                                  });
+
+                                  const existing = getRunRecomData();
+                                  if (!existing.includes(key)) {
+                                    setRunRecomDataLS([...existing, key]);
+                                  }
+                                }, 5000);
+                              }}
+                              className="inline-flex items-center rounded-lg bg-amber-600 hover:bg-amber-700 px-3 py-1.5 text-xs font-medium text-white transition-colors disabled:opacity-70"
+                            >
+                              {isRunning ? "Running..." : "Run Recommendation"}
+                            </button>
+                          );
+                        })()}
                       </td>
                     )}
                   </tr>
