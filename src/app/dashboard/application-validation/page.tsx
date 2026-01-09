@@ -119,16 +119,29 @@ export default function DashboardPage() {
   // Transform dashboard data into table rows
   const tableRows: TableRow[] = dashboardData
     ? Object.entries(dashboardData.data).flatMap(([course, levels]) =>
-        Object.entries(levels).map(([level, levelData]) => ({
-          course,
-          level,
-          seatsAvailable: levelData.total_seats,
-          applicationsReceived: levelData.total_applications,
-          seatsGranted: 0, // Default to 0 as per image
-          status: verificationInProgress
-            ? "Submission Open"
-            : "Submission Closed", // Default status as per image
-        }))
+        Object.entries(levels).map(([level, levelData]) => {
+          let status: string;
+
+          if (!verificationInProgress) {
+            status = "Verification Completed";
+          }
+          else if (level === "PhD" && course === "Management") {
+            status = "Verification Completed";
+          }
+          
+          else {
+            status = "Verification In Progress";
+          }
+
+          return {
+            course,
+            level,
+            seatsAvailable: levelData.total_seats,
+            applicationsReceived: levelData.total_applications,
+            seatsGranted: 0, 
+            status,
+          };
+        })
       )
     : [];
 
@@ -204,7 +217,9 @@ export default function DashboardPage() {
         </div>
         <div className="rounded-xl bg-white border border-slate-200 shadow-sm p-6">
           <p className="text-sm text-slate-600 mb-2">
-            Verification In Progress
+            {verificationInProgress
+              ? "Verification In Progress"
+              : "Verification Completed"}
           </p>
           <p className="text-3xl font-semibold text-slate-900">
             {isLoading ? (
@@ -289,7 +304,15 @@ export default function DashboardPage() {
                       }}
                       className="px-6 py-4 cursor-pointer"
                     >
-                      <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium border ${
+                          row.status === "Verification Completed"
+                            ? "bg-blue-100 text-blue-700 border-blue-200"
+                            : row.status === "Verification In Progress"
+                            ? "bg-amber-100 text-amber-700 border-amber-200"
+                            : "bg-green-100 text-green-700 border-green-200"
+                        }`}
+                      >
                         {row.status}
                       </span>
                     </td>

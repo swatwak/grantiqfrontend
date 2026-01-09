@@ -190,6 +190,16 @@ function RecommendationPageData() {
   );
   const [courseConfig, setCourseConfig] = useState<CourseConfig[]>([]);
 
+  // Accordion state management
+  const [accordionState, setAccordionState] = useState({
+    verificationResults: true, // Default open when toggle is ON
+    recommendationDetails: false, // Default closed when toggle is ON
+    identityDetails: false,
+    personalDetails: false,
+    documentDetails: false,
+    universityDetails: false,
+  });
+
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -234,6 +244,37 @@ function RecommendationPageData() {
       localStorage.getItem("verificationInProgress") === "true"
     );
   }, []);
+
+  // Update accordion default state when verificationInProgress changes
+  useEffect(() => {
+    if (verificationInProgress !== null) {
+      setAccordionState({
+        verificationResults: verificationInProgress, // Open when toggle ON
+        recommendationDetails: !verificationInProgress, // Open when toggle OFF
+        identityDetails: false,
+        personalDetails: false,
+        documentDetails: false,
+        universityDetails: false,
+      });
+    }
+  }, [verificationInProgress]);
+
+  // Reset accordion state when application changes
+  useEffect(() => {
+    if (selectedApplication && verificationInProgress !== null) {
+      setAccordionState({
+        verificationResults: verificationInProgress,
+        recommendationDetails: !verificationInProgress,
+        identityDetails: false,
+        personalDetails: false,
+        documentDetails: false,
+        universityDetails: false,
+      });
+      // Reset verification details when application changes
+      setShowVerificationDetails(false);
+      setVerificationResults(null);
+    }
+  }, [selectedApplication?.id, verificationInProgress]);
 
   useEffect(() => {
     async function loadApplications() {
@@ -365,7 +406,11 @@ function RecommendationPageData() {
   };
 
   const handleApprovalWithReason = async () => {
-    if (!selectedApplication || !approvalReason.trim() || !approvalDeclaration) {
+    if (
+      !selectedApplication ||
+      !approvalReason.trim() ||
+      !approvalDeclaration
+    ) {
       return;
     }
 
@@ -881,454 +926,513 @@ function RecommendationPageData() {
 
             <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-5 max-h-[70vh] overflow-y-auto bg-slate-50">
               <section className="space-y-3">
-                <h3 className="text-sm font-semibold text-slate-900">
-                  Identity Details
-                </h3>
-                <div className="space-y-2 text-xs text-slate-700">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Full Name</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.full_name || "—"}
-                    </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAccordionState((prev) => ({
+                      ...prev,
+                      identityDetails: !prev.identityDetails,
+                    }))
+                  }
+                  className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
+                >
+                  <span className="text-xs">
+                    {accordionState.identityDetails ? "▼" : "▶"}
+                  </span>
+                  <h3>Identity Details</h3>
+                </button>
+                {accordionState.identityDetails && (
+                  <div className="space-y-2 text-xs text-slate-700">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Full Name</span>
+                      <span className="font-medium text-right">
+                        {selectedApplication.full_name || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Aadhaar Number</span>
+                      <span className="font-medium text-right">
+                        {selectedApplication.aadhaar_number || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">PAN Number</span>
+                      <span className="font-medium text-right">
+                        {selectedApplication.pan_number || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Date of Birth</span>
+                      <span className="font-medium text-right">
+                        {selectedApplication.dob_year &&
+                        selectedApplication.dob_month &&
+                        selectedApplication.dob_day
+                          ? `${selectedApplication.dob_day}/${selectedApplication.dob_month}/${selectedApplication.dob_year}`
+                          : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Category</span>
+                      <span className="font-medium text-right">
+                        {getCategoryFromApplication(selectedApplication)}
+                      </span>
+                    </div>
+                    {selectedApplication.merit_score !== null &&
+                      selectedApplication.merit_score !== undefined && (
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-400">Merit Score</span>
+                          <span className="font-medium text-right">
+                            {selectedApplication.merit_score}/100
+                          </span>
+                        </div>
+                      )}
                   </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Aadhaar Number</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.aadhaar_number || "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">PAN Number</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.pan_number || "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Date of Birth</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.dob_year &&
-                      selectedApplication.dob_month &&
-                      selectedApplication.dob_day
-                        ? `${selectedApplication.dob_day}/${selectedApplication.dob_month}/${selectedApplication.dob_year}`
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Category</span>
-                    <span className="font-medium text-right">
-                      {getCategoryFromApplication(selectedApplication)}
-                    </span>
-                  </div>
-                  {selectedApplication.merit_score !== null &&
-                    selectedApplication.merit_score !== undefined && (
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">Merit Score</span>
-                        <span className="font-medium text-right">
-                          {selectedApplication.merit_score}/100
-                        </span>
-                      </div>
-                    )}
-                </div>
+                )}
               </section>
 
               <section className="space-y-3">
-                <h3 className="text-sm font-semibold text-slate-900">
-                  Personal Details
-                </h3>
-                <div className="space-y-2 text-xs text-slate-700">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Father&apos;s Name</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.father_name || "—"}
-                    </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAccordionState((prev) => ({
+                      ...prev,
+                      personalDetails: !prev.personalDetails,
+                    }))
+                  }
+                  className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
+                >
+                  <span className="text-xs">
+                    {accordionState.personalDetails ? "▼" : "▶"}
+                  </span>
+                  <h3>Personal Details</h3>
+                </button>
+                {accordionState.personalDetails && (
+                  <div className="space-y-2 text-xs text-slate-700">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Father&apos;s Name</span>
+                      <span className="font-medium text-right">
+                        {selectedApplication.father_name || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Mother&apos;s Name</span>
+                      <span className="font-medium text-right">
+                        {selectedApplication.mother_name || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Gender</span>
+                      <span className="font-medium text-right capitalize">
+                        {selectedApplication.gender || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Marital Status</span>
+                      <span className="font-medium text-right capitalize">
+                        {selectedApplication.marital_status || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Mother Tongue</span>
+                      <span className="font-medium text-right">
+                        {selectedApplication.mother_tongue || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Phone</span>
+                      <span className="font-medium text-right">
+                        {selectedApplication.phone || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Email</span>
+                      <span className="font-medium text-right">
+                        {selectedApplication.email || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Address</span>
+                      <span className="font-medium text-right">
+                        {selectedApplication.address ||
+                        selectedApplication.city ||
+                        selectedApplication.state ||
+                        selectedApplication.pincode
+                          ? [
+                              selectedApplication.address,
+                              selectedApplication.city,
+                              selectedApplication.state,
+                              selectedApplication.pincode,
+                            ]
+                              .filter(Boolean)
+                              .join(", ")
+                          : "—"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Mother&apos;s Name</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.mother_name || "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Gender</span>
-                    <span className="font-medium text-right capitalize">
-                      {selectedApplication.gender || "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Marital Status</span>
-                    <span className="font-medium text-right capitalize">
-                      {selectedApplication.marital_status || "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Mother Tongue</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.mother_tongue || "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Phone</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.phone || "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Email</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.email || "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Address</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.address ||
-                      selectedApplication.city ||
-                      selectedApplication.state ||
-                      selectedApplication.pincode
-                        ? [
-                            selectedApplication.address,
-                            selectedApplication.city,
-                            selectedApplication.state,
-                            selectedApplication.pincode,
-                          ]
-                            .filter(Boolean)
-                            .join(", ")
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
+                )}
               </section>
 
-              {selectedApplication.recommendation_details && (
-                <section className="md:col-span-2 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Recommendation Details
-                    </h3>
-                    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold bg-purple-100 text-purple-700 border border-purple-300">
-                      <span className="text-sm">📊</span>
-                      Rank #
-                      {selectedApplication.recommendation_details.finalRank ||
-                        selectedApplication.finalRank ||
-                        "—"}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    {/* Course Level Priority */}
-                    <div className="rounded-xl border-2 overflow-hidden border-blue-300 bg-blue-50/50">
-                      <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-semibold text-slate-900">
-                            Course Level Priority
-                          </h4>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700">
-                            Priority{" "}
-                            {selectedApplication.recommendation_details
-                              .courseLevelPriority ?? "—"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 space-y-2">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          Priority level based on course type (PhD &gt; Masters
-                          &gt; Bachelors).
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* University Ranking */}
-                    <div className="rounded-xl border-2 overflow-hidden border-amber-300 bg-amber-50/50">
-                      <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-semibold text-slate-900">
-                            University Ranking
-                          </h4>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700">
-                            #
-                            {selectedApplication.recommendation_details
-                              .universityRanking ?? "—"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 space-y-2">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          Global or national ranking of the target university.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Days Until Course Start */}
-                    <div className="rounded-xl border-2 overflow-hidden border-sky-300 bg-sky-50/50">
-                      <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-semibold text-slate-900">
-                            Days Until Course Start
-                          </h4>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700">
-                            {selectedApplication.recommendation_details
-                              .daysUntilCourseStart ?? "—"}{" "}
-                            days
-                          </span>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 space-y-2">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          Time remaining before the course begins. Earlier
-                          starts may get priority.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* First Time Beneficiary */}
-                    <div
-                      className={`rounded-xl border-2 overflow-hidden ${
-                        selectedApplication.recommendation_details
-                          .isFirstTimeBeneficiary
-                          ? "border-emerald-300 bg-emerald-50/50"
-                          : "border-slate-300 bg-slate-50/50"
-                      }`}
-                    >
-                      <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-semibold text-slate-900">
-                            First Time Beneficiary
-                          </h4>
-                          <span
-                            className={`inline-flex items-center gap-1 text-[10px] font-bold ${
-                              selectedApplication.recommendation_details
-                                .isFirstTimeBeneficiary
-                                ? "text-emerald-700"
-                                : "text-slate-700"
-                            }`}
-                          >
-                            {selectedApplication.recommendation_details
-                              .isFirstTimeBeneficiary
-                              ? "✓ Yes"
-                              : "✗ No"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 space-y-2">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          First-time applicants may receive additional priority.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Annual Family Income */}
-                    <div className="rounded-xl border-2 overflow-hidden border-teal-300 bg-teal-50/50">
-                      <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-semibold text-slate-900">
-                            Annual Family Income
-                          </h4>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-teal-700">
-                            ₹
-                            {selectedApplication.recommendation_details.annualFamilyIncome?.toLocaleString(
-                              "en-IN"
-                            ) ?? "—"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 space-y-2">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          Total annual income of the applicant&apos;s family.
-                          Lower income may receive higher priority.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Qualifying Degree Percentage */}
-                    <div className="rounded-xl border-2 overflow-hidden border-indigo-300 bg-indigo-50/50">
-                      <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-semibold text-slate-900">
-                            Qualifying Degree Percentage
-                          </h4>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700">
-                            {selectedApplication.recommendation_details
-                              .qualifyingDegreePercentage != null
-                              ? `${selectedApplication.recommendation_details.qualifyingDegreePercentage.toFixed(
-                                  2
-                                )}%`
-                              : "—"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 space-y-2">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          Percentage scored in the qualifying degree
-                          examination.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Application Submitted On */}
-                    <div className="rounded-xl border-2 overflow-hidden border-rose-300 bg-rose-50/50">
-                      <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-semibold text-slate-900">
-                            Application Submitted On
-                          </h4>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700">
-                            {selectedApplication.recommendation_details
-                              .applicationSubmittedOn
-                              ? formatDate(
-                                  selectedApplication.recommendation_details
-                                    .applicationSubmittedOn
-                                )
-                              : "—"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="px-4 py-3 space-y-2">
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          Date when the application was submitted. Earlier
-                          submissions may be prioritized.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl px-4 py-3 border bg-purple-50 border-purple-300">
-                    <p className="text-xs font-medium text-slate-700">
-                      <span className="font-semibold">Final Ranking: </span>
-                      This applicant is ranked{" "}
-                      <span className="font-bold text-purple-700">
-                        #
+              {selectedApplication.recommendation_details &&
+                !verificationInProgress && (
+                  <section className="md:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAccordionState((prev) => ({
+                            ...prev,
+                            recommendationDetails: !prev.recommendationDetails,
+                          }))
+                        }
+                        className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
+                      >
+                        <span className="text-xs">
+                          {accordionState.recommendationDetails ? "▼" : "▶"}
+                        </span>
+                        <h3>Recommendation Details</h3>
+                      </button>
+                      <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold bg-purple-100 text-purple-700 border border-purple-300">
+                        <span className="text-sm">📊</span>
+                        Rank #
                         {selectedApplication.recommendation_details.finalRank ||
                           selectedApplication.finalRank ||
                           "—"}
-                      </span>{" "}
-                      based on the weighted scoring of all recommendation
-                      factors above.
-                    </p>
-                  </div>
-
-                  {/* Score Breakdown Table */}
-                  {selectedApplication.recommendation_details
-                    .scoreBreakdown && (
-                    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                      <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
-                        <h4 className="text-sm font-semibold text-slate-900">
-                          Score Breakdown
-                        </h4>
-                        <p className="text-xs text-slate-600 mt-1">
-                          Detailed breakdown of the weightage score calculation
-                        </p>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full text-sm">
-                          <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200">
-                              <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                                Score Component
-                              </th>
-                              <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                                Score
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            <tr className="hover:bg-slate-50">
-                              <td className="px-4 py-3 text-xs text-slate-700">
-                                University Score
-                              </td>
-                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details
-                                  .scoreBreakdown.universityScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.universityScore.toFixed(
-                                      2
-                                    )
-                                  : "—"}
-                              </td>
-                            </tr>
-                            <tr className="hover:bg-slate-50">
-                              <td className="px-4 py-3 text-xs text-slate-700">
-                                Academic Score
-                              </td>
-                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details
-                                  .scoreBreakdown.academicScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.academicScore.toFixed(
-                                      2
-                                    )
-                                  : "—"}
-                              </td>
-                            </tr>
-                            <tr className="hover:bg-slate-50">
-                              <td className="px-4 py-3 text-xs text-slate-700">
-                                Course Score
-                              </td>
-                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details
-                                  .scoreBreakdown.courseScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.courseScore.toFixed(
-                                      2
-                                    )
-                                  : "—"}
-                              </td>
-                            </tr>
-                            <tr className="hover:bg-slate-50">
-                              <td className="px-4 py-3 text-xs text-slate-700">
-                                Income Score
-                              </td>
-                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details
-                                  .scoreBreakdown.incomeScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.incomeScore.toFixed(
-                                      2
-                                    )
-                                  : "—"}
-                              </td>
-                            </tr>
-                            <tr className="hover:bg-slate-50">
-                              <td className="px-4 py-3 text-xs text-slate-700">
-                                Beneficiary Score
-                              </td>
-                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details
-                                  .scoreBreakdown.beneficiaryScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.beneficiaryScore.toFixed(
-                                      2
-                                    )
-                                  : "—"}
-                              </td>
-                            </tr>
-                            <tr className="hover:bg-slate-50">
-                              <td className="px-4 py-3 text-xs text-slate-700">
-                                Age Score
-                              </td>
-                              <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
-                                {selectedApplication.recommendation_details
-                                  .scoreBreakdown.ageScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.ageScore.toFixed(
-                                      2
-                                    )
-                                  : "—"}
-                              </td>
-                            </tr>
-                            <tr className="bg-purple-50 border-t-2 border-purple-300 font-semibold">
-                              <td className="px-4 py-3 text-xs text-slate-900">
-                                Total Score
-                              </td>
-                              <td className="px-4 py-3 text-right text-xs font-bold text-purple-700">
-                                {selectedApplication.recommendation_details
-                                  .scoreBreakdown.totalScore != null
-                                  ? selectedApplication.recommendation_details.scoreBreakdown.totalScore.toFixed(
-                                      2
-                                    )
-                                  : "—"}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
+                      </span>
                     </div>
-                  )}
-                </section>
-              )}
+                    {accordionState.recommendationDetails && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                          {/* Course Level Priority */}
+                          <div className="rounded-xl border-2 overflow-hidden border-blue-300 bg-blue-50/50">
+                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-semibold text-slate-900">
+                                  Course Level Priority
+                                </h4>
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700">
+                                  Priority{" "}
+                                  {selectedApplication.recommendation_details
+                                    .courseLevelPriority ?? "—"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="px-4 py-3 space-y-2">
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                Priority level based on course type (PhD &gt;
+                                Masters &gt; Bachelors).
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* University Ranking */}
+                          <div className="rounded-xl border-2 overflow-hidden border-amber-300 bg-amber-50/50">
+                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-semibold text-slate-900">
+                                  University Ranking
+                                </h4>
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700">
+                                  #
+                                  {selectedApplication.recommendation_details
+                                    .universityRanking ?? "—"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="px-4 py-3 space-y-2">
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                Global or national ranking of the target
+                                university.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Days Until Course Start */}
+                          <div className="rounded-xl border-2 overflow-hidden border-sky-300 bg-sky-50/50">
+                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-semibold text-slate-900">
+                                  Days Until Course Start
+                                </h4>
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700">
+                                  {selectedApplication.recommendation_details
+                                    .daysUntilCourseStart ?? "—"}{" "}
+                                  days
+                                </span>
+                              </div>
+                            </div>
+                            <div className="px-4 py-3 space-y-2">
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                Time remaining before the course begins. Earlier
+                                starts may get priority.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* First Time Beneficiary */}
+                          <div
+                            className={`rounded-xl border-2 overflow-hidden ${
+                              selectedApplication.recommendation_details
+                                .isFirstTimeBeneficiary
+                                ? "border-emerald-300 bg-emerald-50/50"
+                                : "border-slate-300 bg-slate-50/50"
+                            }`}
+                          >
+                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-semibold text-slate-900">
+                                  First Time Beneficiary
+                                </h4>
+                                <span
+                                  className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                                    selectedApplication.recommendation_details
+                                      .isFirstTimeBeneficiary
+                                      ? "text-emerald-700"
+                                      : "text-slate-700"
+                                  }`}
+                                >
+                                  {selectedApplication.recommendation_details
+                                    .isFirstTimeBeneficiary
+                                    ? "✓ Yes"
+                                    : "✗ No"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="px-4 py-3 space-y-2">
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                First-time applicants may receive additional
+                                priority.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Annual Family Income */}
+                          <div className="rounded-xl border-2 overflow-hidden border-teal-300 bg-teal-50/50">
+                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-semibold text-slate-900">
+                                  Annual Family Income
+                                </h4>
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-teal-700">
+                                  ₹
+                                  {selectedApplication.recommendation_details.annualFamilyIncome?.toLocaleString(
+                                    "en-IN"
+                                  ) ?? "—"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="px-4 py-3 space-y-2">
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                Total annual income of the applicant&apos;s
+                                family. Lower income may receive higher
+                                priority.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Qualifying Degree Percentage */}
+                          <div className="rounded-xl border-2 overflow-hidden border-indigo-300 bg-indigo-50/50">
+                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-semibold text-slate-900">
+                                  Qualifying Degree Percentage
+                                </h4>
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700">
+                                  {selectedApplication.recommendation_details
+                                    .qualifyingDegreePercentage != null
+                                    ? `${selectedApplication.recommendation_details.qualifyingDegreePercentage.toFixed(
+                                        2
+                                      )}%`
+                                    : "—"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="px-4 py-3 space-y-2">
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                Percentage scored in the qualifying degree
+                                examination.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Application Submitted On */}
+                          <div className="rounded-xl border-2 overflow-hidden border-rose-300 bg-rose-50/50">
+                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-semibold text-slate-900">
+                                  Application Submitted On
+                                </h4>
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700">
+                                  {selectedApplication.recommendation_details
+                                    .applicationSubmittedOn
+                                    ? formatDate(
+                                        selectedApplication
+                                          .recommendation_details
+                                          .applicationSubmittedOn
+                                      )
+                                    : "—"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="px-4 py-3 space-y-2">
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                Date when the application was submitted. Earlier
+                                submissions may be prioritized.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl px-4 py-3 border bg-purple-50 border-purple-300">
+                          <p className="text-xs font-medium text-slate-700">
+                            <span className="font-semibold">
+                              Final Ranking:{" "}
+                            </span>
+                            This applicant is ranked{" "}
+                            <span className="font-bold text-purple-700">
+                              #
+                              {selectedApplication.recommendation_details
+                                .finalRank ||
+                                selectedApplication.finalRank ||
+                                "—"}
+                            </span>{" "}
+                            based on the weighted scoring of all recommendation
+                            factors above.
+                          </p>
+                        </div>
+
+                        {/* Score Breakdown Table */}
+                        {selectedApplication.recommendation_details
+                          .scoreBreakdown && (
+                          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                            <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+                              <h4 className="text-sm font-semibold text-slate-900">
+                                Score Breakdown
+                              </h4>
+                              <p className="text-xs text-slate-600 mt-1">
+                                Detailed breakdown of the weightage score
+                                calculation
+                              </p>
+                            </div>
+                            <div className="overflow-x-auto">
+                              <table className="min-w-full text-sm">
+                                <thead>
+                                  <tr className="bg-slate-50 border-b border-slate-200">
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                                      Score Component
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 uppercase tracking-wide">
+                                      Score
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  <tr className="hover:bg-slate-50">
+                                    <td className="px-4 py-3 text-xs text-slate-700">
+                                      University Score
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                      {selectedApplication
+                                        .recommendation_details.scoreBreakdown
+                                        .universityScore != null
+                                        ? selectedApplication.recommendation_details.scoreBreakdown.universityScore.toFixed(
+                                            2
+                                          )
+                                        : "—"}
+                                    </td>
+                                  </tr>
+                                  <tr className="hover:bg-slate-50">
+                                    <td className="px-4 py-3 text-xs text-slate-700">
+                                      Academic Score
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                      {selectedApplication
+                                        .recommendation_details.scoreBreakdown
+                                        .academicScore != null
+                                        ? selectedApplication.recommendation_details.scoreBreakdown.academicScore.toFixed(
+                                            2
+                                          )
+                                        : "—"}
+                                    </td>
+                                  </tr>
+                                  <tr className="hover:bg-slate-50">
+                                    <td className="px-4 py-3 text-xs text-slate-700">
+                                      Course Score
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                      {selectedApplication
+                                        .recommendation_details.scoreBreakdown
+                                        .courseScore != null
+                                        ? selectedApplication.recommendation_details.scoreBreakdown.courseScore.toFixed(
+                                            2
+                                          )
+                                        : "—"}
+                                    </td>
+                                  </tr>
+                                  <tr className="hover:bg-slate-50">
+                                    <td className="px-4 py-3 text-xs text-slate-700">
+                                      Income Score
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                      {selectedApplication
+                                        .recommendation_details.scoreBreakdown
+                                        .incomeScore != null
+                                        ? selectedApplication.recommendation_details.scoreBreakdown.incomeScore.toFixed(
+                                            2
+                                          )
+                                        : "—"}
+                                    </td>
+                                  </tr>
+                                  <tr className="hover:bg-slate-50">
+                                    <td className="px-4 py-3 text-xs text-slate-700">
+                                      Beneficiary Score
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                      {selectedApplication
+                                        .recommendation_details.scoreBreakdown
+                                        .beneficiaryScore != null
+                                        ? selectedApplication.recommendation_details.scoreBreakdown.beneficiaryScore.toFixed(
+                                            2
+                                          )
+                                        : "—"}
+                                    </td>
+                                  </tr>
+                                  <tr className="hover:bg-slate-50">
+                                    <td className="px-4 py-3 text-xs text-slate-700">
+                                      Age Score
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-xs font-medium text-slate-900">
+                                      {selectedApplication
+                                        .recommendation_details.scoreBreakdown
+                                        .ageScore != null
+                                        ? selectedApplication.recommendation_details.scoreBreakdown.ageScore.toFixed(
+                                            2
+                                          )
+                                        : "—"}
+                                    </td>
+                                  </tr>
+                                  <tr className="bg-purple-50 border-t-2 border-purple-300 font-semibold">
+                                    <td className="px-4 py-3 text-xs text-slate-900">
+                                      Total Score
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-xs font-bold text-purple-700">
+                                      {selectedApplication
+                                        .recommendation_details.scoreBreakdown
+                                        .totalScore != null
+                                        ? selectedApplication.recommendation_details.scoreBreakdown.totalScore.toFixed(
+                                            2
+                                          )
+                                        : "—"}
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </section>
+                )}
 
               {(() => {
                 const validationData = parseValidationResult(
@@ -1340,9 +1444,21 @@ function RecommendationPageData() {
                 return (
                   <section className="md:col-span-2 space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-slate-900">
-                        📋 Document Validation Results
-                      </h3>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setAccordionState((prev) => ({
+                            ...prev,
+                            verificationResults: !prev.verificationResults,
+                          }))
+                        }
+                        className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
+                      >
+                        <span className="text-xs">
+                          {accordionState.verificationResults ? "▼" : "▶"}
+                        </span>
+                        <h3>📋 Document Validation Results</h3>
+                      </button>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
@@ -1389,192 +1505,199 @@ function RecommendationPageData() {
                         </button>
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                      {Object.entries(
-                        validationData.verification_results || {}
-                      ).map(([docType, result]: [string, any]) => (
-                        <div
-                          key={docType}
-                          className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-md ${
-                            result.success && result.is_eligible === true
-                              ? "border-emerald-300 bg-emerald-50/50"
-                              : result.success && result.is_eligible === false
-                              ? "border-amber-300 bg-amber-50/50"
-                              : result.success && result.is_eligible === null
-                              ? "border-blue-300 bg-blue-50/50"
-                              : "border-rose-300 bg-rose-50/50"
-                          }`}
-                        >
-                          <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-xs font-semibold text-slate-900">
-                                {getDocumentTypeLabel(docType)}
-                              </h4>
-                              <span
-                                className={`inline-flex items-center gap-1 text-[10px] font-bold ${
-                                  result.success && result.is_eligible === true
-                                    ? "text-emerald-700"
-                                    : result.success &&
-                                      result.is_eligible === false
-                                    ? "text-amber-700"
-                                    : result.success &&
-                                      result.is_eligible === null
-                                    ? "text-blue-700"
-                                    : "text-rose-700"
-                                }`}
-                              >
-                                {result.success && result.is_eligible === true
-                                  ? "✓ ELIGIBLE"
+                    {accordionState.verificationResults && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                          {Object.entries(
+                            validationData.verification_results || {}
+                          ).map(([docType, result]: [string, any]) => (
+                            <div
+                              key={docType}
+                              className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-md ${
+                                result.success && result.is_eligible === true
+                                  ? "border-emerald-300 bg-emerald-50/50"
                                   : result.success &&
                                     result.is_eligible === false
-                                  ? "✗ NOT ELIGIBLE"
+                                  ? "border-amber-300 bg-amber-50/50"
                                   : result.success &&
                                     result.is_eligible === null
-                                  ? "? REVIEW"
-                                  : "✗ FAILED"}
-                              </span>
-                            </div>
-                          </div>
+                                  ? "border-blue-300 bg-blue-50/50"
+                                  : "border-rose-300 bg-rose-50/50"
+                              }`}
+                            >
+                              <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-xs font-semibold text-slate-900">
+                                    {getDocumentTypeLabel(docType)}
+                                  </h4>
+                                  <span
+                                    className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                                      result.success &&
+                                      result.is_eligible === true
+                                        ? "text-emerald-700"
+                                        : result.success &&
+                                          result.is_eligible === false
+                                        ? "text-amber-700"
+                                        : result.success &&
+                                          result.is_eligible === null
+                                        ? "text-blue-700"
+                                        : "text-rose-700"
+                                    }`}
+                                  >
+                                    {result.success &&
+                                    result.is_eligible === true
+                                      ? "✓ ELIGIBLE"
+                                      : result.success &&
+                                        result.is_eligible === false
+                                      ? "✗ NOT ELIGIBLE"
+                                      : result.success &&
+                                        result.is_eligible === null
+                                      ? "? REVIEW"
+                                      : "✗ FAILED"}
+                                  </span>
+                                </div>
+                              </div>
 
-                          <div className="px-4 py-3 space-y-2">
-                            <p className="text-xs text-slate-700 leading-relaxed">
-                              {result.message ||
-                                "No verification message available"}
-                            </p>
+                              <div className="px-4 py-3 space-y-2">
+                                <p className="text-xs text-slate-700 leading-relaxed">
+                                  {result.message ||
+                                    "No verification message available"}
+                                </p>
 
-                            {result.data && (
-                              <div className="mt-3 pt-3 border-t border-slate-200 space-y-1.5">
-                                {result.data.gross_income_numeric !==
-                                  undefined && (
-                                  <div className="flex justify-between items-center text-[11px]">
-                                    <span className="text-slate-500 font-medium">
-                                      Gross Income
-                                    </span>
-                                    <span className="font-semibold text-slate-900">
-                                      ₹
-                                      {result.data.gross_income_numeric.toLocaleString(
-                                        "en-IN"
+                                {result.data && (
+                                  <div className="mt-3 pt-3 border-t border-slate-200 space-y-1.5">
+                                    {result.data.gross_income_numeric !==
+                                      undefined && (
+                                      <div className="flex justify-between items-center text-[11px]">
+                                        <span className="text-slate-500 font-medium">
+                                          Gross Income
+                                        </span>
+                                        <span className="font-semibold text-slate-900">
+                                          ₹
+                                          {result.data.gross_income_numeric.toLocaleString(
+                                            "en-IN"
+                                          )}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {result.data.income_limit !== undefined && (
+                                      <div className="flex justify-between items-center text-[11px]">
+                                        <span className="text-slate-500 font-medium">
+                                          Income Limit
+                                        </span>
+                                        <span className="font-semibold text-slate-900">
+                                          ₹
+                                          {result.data.income_limit.toLocaleString(
+                                            "en-IN"
+                                          )}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {result.data.percentage !== undefined &&
+                                      result.data.percentage !== null && (
+                                        <div className="flex justify-between items-center text-[11px]">
+                                          <span className="text-slate-500 font-medium">
+                                            Percentage
+                                          </span>
+                                          <span className="font-semibold text-slate-900">
+                                            {typeof result.data.percentage ===
+                                            "number"
+                                              ? `${result.data.percentage.toFixed(
+                                                  2
+                                                )}%`
+                                              : result.data.percentage}
+                                          </span>
+                                        </div>
                                       )}
-                                    </span>
-                                  </div>
-                                )}
-                                {result.data.income_limit !== undefined && (
-                                  <div className="flex justify-between items-center text-[11px]">
-                                    <span className="text-slate-500 font-medium">
-                                      Income Limit
-                                    </span>
-                                    <span className="font-semibold text-slate-900">
-                                      ₹
-                                      {result.data.income_limit.toLocaleString(
-                                        "en-IN"
-                                      )}
-                                    </span>
-                                  </div>
-                                )}
-                                {result.data.percentage !== undefined &&
-                                  result.data.percentage !== null && (
-                                    <div className="flex justify-between items-center text-[11px]">
-                                      <span className="text-slate-500 font-medium">
-                                        Percentage
-                                      </span>
-                                      <span className="font-semibold text-slate-900">
-                                        {typeof result.data.percentage ===
-                                        "number"
-                                          ? `${result.data.percentage.toFixed(
+                                    {result.data.percentage_numeric !==
+                                      undefined &&
+                                      result.data.percentage_numeric !==
+                                        null && (
+                                        <div className="flex justify-between items-center text-[11px]">
+                                          <span className="text-slate-500 font-medium">
+                                            Percentage
+                                          </span>
+                                          <span className="font-semibold text-slate-900">
+                                            {result.data.percentage_numeric.toFixed(
                                               2
-                                            )}%`
-                                          : result.data.percentage}
-                                      </span>
-                                    </div>
-                                  )}
-                                {result.data.percentage_numeric !== undefined &&
-                                  result.data.percentage_numeric !== null && (
-                                    <div className="flex justify-between items-center text-[11px]">
-                                      <span className="text-slate-500 font-medium">
-                                        Percentage
-                                      </span>
-                                      <span className="font-semibold text-slate-900">
-                                        {result.data.percentage_numeric.toFixed(
-                                          2
-                                        )}
-                                        %
-                                      </span>
-                                    </div>
-                                  )}
-                                {result.data.cgpa !== undefined &&
-                                  result.data.cgpa !== null && (
-                                    <div className="flex justify-between items-center text-[11px]">
-                                      <span className="text-slate-500 font-medium">
-                                        CGPA
-                                      </span>
-                                      <span className="font-semibold text-slate-900">
-                                        {result.data.cgpa}
-                                        {result.data.cgpa_scale &&
-                                          ` / ${result.data.cgpa_scale}`}
-                                      </span>
-                                    </div>
-                                  )}
-                                {result.data.category && (
-                                  <div className="flex justify-between items-center text-[11px]">
-                                    <span className="text-slate-500 font-medium">
-                                      Category
-                                    </span>
-                                    <span className="font-semibold text-slate-900 uppercase">
-                                      {result.data.category}
-                                    </span>
-                                  </div>
-                                )}
-                                {result.data.extracted_caste &&
-                                  result.data.extracted_caste !==
-                                    "Not Available" && (
-                                    <div className="flex justify-between items-center text-[11px]">
-                                      <span className="text-slate-500 font-medium">
-                                        Extracted Caste
-                                      </span>
-                                      <span className="font-semibold text-slate-900">
-                                        {result.data.extracted_caste}
-                                      </span>
-                                    </div>
-                                  )}
-                                {result.data.extracted_name && (
-                                  <div className="flex justify-between items-center text-[11px]">
-                                    <span className="text-slate-500 font-medium">
-                                      Document Name
-                                    </span>
-                                    <span className="font-semibold text-slate-900">
-                                      {result.data.extracted_name}
-                                    </span>
-                                  </div>
-                                )}
-                                {result.data.student_name && (
-                                  <div className="flex justify-between items-center text-[11px]">
-                                    <span className="text-slate-500 font-medium">
-                                      Student Name
-                                    </span>
-                                    <span className="font-semibold text-slate-900">
-                                      {result.data.student_name}
-                                    </span>
-                                  </div>
-                                )}
-                                {result.data.year_of_passing && (
-                                  <div className="flex justify-between items-center text-[11px]">
-                                    <span className="text-slate-500 font-medium">
-                                      Year of Passing
-                                    </span>
-                                    <span className="font-semibold text-slate-900">
-                                      {result.data.year_of_passing}
-                                    </span>
+                                            )}
+                                            %
+                                          </span>
+                                        </div>
+                                      )}
+                                    {result.data.cgpa !== undefined &&
+                                      result.data.cgpa !== null && (
+                                        <div className="flex justify-between items-center text-[11px]">
+                                          <span className="text-slate-500 font-medium">
+                                            CGPA
+                                          </span>
+                                          <span className="font-semibold text-slate-900">
+                                            {result.data.cgpa}
+                                            {result.data.cgpa_scale &&
+                                              ` / ${result.data.cgpa_scale}`}
+                                          </span>
+                                        </div>
+                                      )}
+                                    {result.data.category && (
+                                      <div className="flex justify-between items-center text-[11px]">
+                                        <span className="text-slate-500 font-medium">
+                                          Category
+                                        </span>
+                                        <span className="font-semibold text-slate-900 uppercase">
+                                          {result.data.category}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {result.data.extracted_caste &&
+                                      result.data.extracted_caste !==
+                                        "Not Available" && (
+                                        <div className="flex justify-between items-center text-[11px]">
+                                          <span className="text-slate-500 font-medium">
+                                            Extracted Caste
+                                          </span>
+                                          <span className="font-semibold text-slate-900">
+                                            {result.data.extracted_caste}
+                                          </span>
+                                        </div>
+                                      )}
+                                    {result.data.extracted_name && (
+                                      <div className="flex justify-between items-center text-[11px]">
+                                        <span className="text-slate-500 font-medium">
+                                          Document Name
+                                        </span>
+                                        <span className="font-semibold text-slate-900">
+                                          {result.data.extracted_name}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {result.data.student_name && (
+                                      <div className="flex justify-between items-center text-[11px]">
+                                        <span className="text-slate-500 font-medium">
+                                          Student Name
+                                        </span>
+                                        <span className="font-semibold text-slate-900">
+                                          {result.data.student_name}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {result.data.year_of_passing && (
+                                      <div className="flex justify-between items-center text-[11px]">
+                                        <span className="text-slate-500 font-medium">
+                                          Year of Passing
+                                        </span>
+                                        <span className="font-semibold text-slate-900">
+                                          {result.data.year_of_passing}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
 
-                    {/* <div
+                        {/* <div
                       className={`rounded-xl px-4 py-3 border ${
                         validationData.overall_eligible
                           ? "bg-emerald-50 border-emerald-300"
@@ -1592,6 +1715,8 @@ function RecommendationPageData() {
                           : "✗ Some documents failed verification or applicant is not eligible"}
                       </p>
                     </div> */}
+                      </div>
+                    )}
                   </section>
                 );
               })()}
@@ -1610,9 +1735,14 @@ function RecommendationPageData() {
               {showVerificationDetails && verificationResults && (
                 <section className="md:col-span-2 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      🔍 Source Verification Results
-                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowVerificationDetails(false)}
+                      className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
+                    >
+                      <span className="text-xs">▼</span>
+                      <h3>🔍 Source Verification Results</h3>
+                    </button>
                     <button
                       type="button"
                       onClick={() => setShowVerificationDetails(false)}
@@ -1790,9 +1920,21 @@ function RecommendationPageData() {
 
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Document Details
-                  </h3>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAccordionState((prev) => ({
+                        ...prev,
+                        documentDetails: !prev.documentDetails,
+                      }))
+                    }
+                    className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
+                  >
+                    <span className="text-xs">
+                      {accordionState.documentDetails ? "▼" : "▶"}
+                    </span>
+                    <h3>Document Details</h3>
+                  </button>
                   <div className="flex items-center gap-2">
                     <select
                       value={selectedDocType}
@@ -1905,74 +2047,101 @@ function RecommendationPageData() {
                   </div>
                 </div>
 
-                {viewDocsError && (
-                  <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
-                    {viewDocsError}
-                  </p>
-                )}
+                {accordionState.documentDetails && (
+                  <div className="space-y-3">
+                    {viewDocsError && (
+                      <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+                        {viewDocsError}
+                      </p>
+                    )}
 
-                <div className="space-y-2 text-xs text-slate-700">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Tribe</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.tribe || "—"}
-                    </span>
+                    <div className="space-y-2 text-xs text-slate-700">
+                      <div className="flex justify-between gap-4">
+                        <span className="text-slate-400">Tribe</span>
+                        <span className="font-medium text-right">
+                          {selectedApplication.tribe || "—"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-slate-400">
+                          ST Certificate No.
+                        </span>
+                        <span className="font-medium text-right">
+                          {selectedApplication.st_certificate_number || "—"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-slate-400">
+                          ST Certificate Issue
+                        </span>
+                        <span className="font-medium text-right">
+                          {selectedApplication.certificate_issue_date
+                            ? formatDate(
+                                selectedApplication.certificate_issue_date
+                              )
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-slate-400">
+                          Caste Validity Cert No.
+                        </span>
+                        <span className="font-medium text-right">
+                          {selectedApplication.caste_validity_cert_number ||
+                            "—"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-slate-400">
+                          Caste Validity Issue
+                        </span>
+                        <span className="font-medium text-right">
+                          {selectedApplication.caste_validity_issue_date
+                            ? formatDate(
+                                selectedApplication.caste_validity_issue_date
+                              )
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-slate-400">Aadhaar Verified</span>
+                        <span className="font-medium text-right">
+                          {selectedApplication.aadhaar_verified ? "Yes" : "No"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-slate-400">PAN Verified</span>
+                        <span className="font-medium text-right">
+                          {selectedApplication.pan_verified ? "Yes" : "No"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">ST Certificate No.</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.st_certificate_number || "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">ST Certificate Issue</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.certificate_issue_date
-                        ? formatDate(selectedApplication.certificate_issue_date)
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">
-                      Caste Validity Cert No.
-                    </span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.caste_validity_cert_number || "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Caste Validity Issue</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.caste_validity_issue_date
-                        ? formatDate(
-                            selectedApplication.caste_validity_issue_date
-                          )
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">Aadhaar Verified</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.aadhaar_verified ? "Yes" : "No"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-400">PAN Verified</span>
-                    <span className="font-medium text-right">
-                      {selectedApplication.pan_verified ? "Yes" : "No"}
-                    </span>
-                  </div>
-                </div>
+                )}
               </section>
 
               <section className="space-y-3">
-                <h3 className="text-sm font-semibold text-slate-900">
-                  University Details
-                </h3>
-                <p className="text-xs text-slate-700">
-                  University and course details will appear here once the
-                  applicant completes the academic section of the application.
-                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAccordionState((prev) => ({
+                      ...prev,
+                      universityDetails: !prev.universityDetails,
+                    }))
+                  }
+                  className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
+                >
+                  <span className="text-xs">
+                    {accordionState.universityDetails ? "▼" : "▶"}
+                  </span>
+                  <h3>University Details</h3>
+                </button>
+                {accordionState.universityDetails && (
+                  <p className="text-xs text-slate-700">
+                    University and course details will appear here once the
+                    applicant completes the academic section of the application.
+                  </p>
+                )}
               </section>
             </div>
           </div>
@@ -2123,9 +2292,7 @@ function RecommendationPageData() {
                 type="button"
                 onClick={handleApprovalWithReason}
                 disabled={
-                  isApproving ||
-                  !approvalReason.trim() ||
-                  !approvalDeclaration
+                  isApproving || !approvalReason.trim() || !approvalDeclaration
                 }
                 className="rounded-lg bg-emerald-500 hover:bg-emerald-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
