@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FaSort } from "react-icons/fa6";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -162,6 +163,47 @@ export default function DashboardPage() {
 
   const completedRecombinations = new Set<string>(getRunRecomData());
 
+  type SortKey =
+    | "course"
+    | "level"
+    | "seatsAvailable"
+    | "applicationsReceived"
+    | "seatsGranted"
+    | "status";
+
+  const [sortConfig, setSortConfig] = useState<{
+    key: SortKey;
+    direction: "asc" | "desc";
+  } | null>(null);
+
+  const sortedTableRows = [...tableRows].sort((a, b) => {
+    if (!sortConfig) return 0;
+
+    const { key, direction } = sortConfig;
+    const order = direction === "asc" ? 1 : -1;
+
+    const valA = a[key];
+    const valB = b[key];
+
+    if (typeof valA === "number" && typeof valB === "number") {
+      return (valA - valB) * order;
+    }
+
+    return String(valA).localeCompare(String(valB)) * order;
+  });
+
+  const handleSort = (key: SortKey) => {
+    setSortConfig((prev) => {
+      if (!prev || prev.key !== key) {
+        return { key, direction: "asc" };
+      }
+      return {
+        key,
+        direction: prev.direction === "asc" ? "desc" : "asc",
+      };
+    });
+  };
+
   return (
     <div className="max-w-7xl mx-auto flex flex-col h-[calc(100vh-7rem)]">
       {/* Header */}
@@ -281,14 +323,54 @@ export default function DashboardPage() {
             <table className="min-w-full text-sm">
               <thead className="sticky top-0 bg-slate-50 z-10">
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-600 border-b border-slate-200">
-                  <th className="px-6 py-3 font-semibold">Course</th>
-                  <th className="px-6 py-3 font-semibold">Level</th>
-                  <th className="px-6 py-3 font-semibold">Seats Available</th>
-                  <th className="px-6 py-3 font-semibold">
-                    Applications Received
+                  <th
+                    onClick={() => handleSort("course")}
+                    className="px-6 py-3 font-semibold cursor-pointer"
+                  >
+                    <div className="flex flex-row items-center gap-1">
+                      Course <FaSort />
+                    </div>
                   </th>
-                  <th className="px-6 py-3 font-semibold">Seats Granted</th>
-                  <th className="px-6 py-3 font-semibold">Status</th>
+                  <th
+                    onClick={() => handleSort("level")}
+                    className="px-6 py-3 font-semibold cursor-pointer"
+                  >
+                    <div className="flex flex-row items-center gap-1">
+                      Level <FaSort />
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleSort("seatsAvailable")}
+                    className="px-6 py-3 font-semibold cursor-pointer"
+                  >
+                    <div className="flex flex-row items-center gap-1">
+                      Seats Available <FaSort />
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleSort("applicationsReceived")}
+                    className="px-6 py-3 font-semibold cursor-pointer"
+                  >
+                    <div className="flex flex-row items-center gap-1">
+                      Applications Received <FaSort />
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleSort("seatsGranted")}
+                    className="px-6 py-3 font-semibold cursor-pointer"
+                  >
+                    <div className="flex flex-row items-center gap-1">
+                      Seats Granted <FaSort />
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleSort("status")}
+                    className="px-6 py-3 font-semibold cursor-pointer"
+                  >
+                    <div className="flex flex-row items-center gap-1">
+                      Status <FaSort />
+                    </div>
+                  </th>
                   {!verificationInProgress && (
                     <th className="px-6 py-3 font-semibold text-right">
                       Action
@@ -297,7 +379,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {tableRows.map((row, index) => (
+                {sortedTableRows.map((row, index) => (
                   <tr
                     key={`${row.course}-${row.level}-${index}`}
                     className={`border-t border-slate-100 ${

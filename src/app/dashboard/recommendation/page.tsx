@@ -693,8 +693,8 @@ function RecommendationPageData() {
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {/* Course Type */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="text-sm text-slate-600 text-center">Course Type </div>
 
         {defaultCourses.map((c) => (
           <button
@@ -711,7 +711,7 @@ function RecommendationPageData() {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {/* Course Field */}
         {/* Selection Warning */}
         {(selectedCourseType === "all" || selectedCourseField === "all") && (
@@ -720,7 +720,7 @@ function RecommendationPageData() {
             <strong>Course Field</strong> to view rankings.
           </div>
         )}
-        Course Level
+        <div className="text-sm text-slate-600 text-center">Course Field </div>
         {courseFields.map((f) => (
           <button
             key={f.value}
