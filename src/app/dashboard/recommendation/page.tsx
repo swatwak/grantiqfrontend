@@ -195,11 +195,15 @@ function RecommendationPageData() {
   const [accordionState, setAccordionState] = useState({
     verificationResults: true, // Default open when toggle is ON
     recommendationDetails: false, // Default closed when toggle is ON
+    personalDetailsVerification: false,
     identityDetails: false,
     personalDetails: false,
     documentDetails: false,
     universityDetails: false,
   });
+
+  // Tab state for Personal Details Verifications
+  const [personalDetailsTab, setPersonalDetailsTab] = useState<"identity" | "personal">("identity");
 
   const searchParams = useSearchParams();
 
@@ -252,6 +256,7 @@ function RecommendationPageData() {
       setAccordionState({
         verificationResults: verificationInProgress, // Open when toggle ON
         recommendationDetails: !verificationInProgress, // Open when toggle OFF
+        personalDetailsVerification: false,
         identityDetails: false,
         personalDetails: false,
         documentDetails: false,
@@ -266,6 +271,7 @@ function RecommendationPageData() {
       setAccordionState({
         verificationResults: verificationInProgress,
         recommendationDetails: !verificationInProgress,
+        personalDetailsVerification: false,
         identityDetails: false,
         personalDetails: false,
         documentDetails: false,
@@ -693,8 +699,8 @@ function RecommendationPageData() {
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap gap-2 items-center">
-        <div className="text-sm text-slate-600 text-center">Course Type </div>
+      <div className="flex flex-wrap gap-2">
+        {/* Course Type */}
 
         {defaultCourses.map((c) => (
           <button
@@ -711,7 +717,7 @@ function RecommendationPageData() {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="flex flex-wrap gap-2">
         {/* Course Field */}
         {/* Selection Warning */}
         {(selectedCourseType === "all" || selectedCourseField === "all") && (
@@ -720,7 +726,7 @@ function RecommendationPageData() {
             <strong>Course Field</strong> to view rankings.
           </div>
         )}
-        <div className="text-sm text-slate-600 text-center">Course Field </div>
+        Course Level
         {courseFields.map((f) => (
           <button
             key={f.value}
@@ -868,114 +874,213 @@ function RecommendationPageData() {
         </div>
       </div>
 
-      {selectedApplication && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-5xl rounded-3xl bg-white border border-slate-200 shadow-2xl shadow-slate-900/30 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4 bg-purple-600">
-              <div>
-                <p className="text-xs uppercase tracking-wider text-purple-100 mb-1 font-semibold">
-                  Application Overview
-                </p>
-                <h2 className="text-lg font-semibold text-white">
-                  {selectedApplication.full_name || "Unnamed Applicant"}
-                </h2>
-                <p className="text-xs text-purple-100 mt-1">
-                  ID:{" "}
-                  <span className="font-mono">
-                    {selectedApplication.application_id.slice(-6).toUpperCase()}
-                  </span>
-                  {" · "}
-                  Step {selectedApplication.current_step} · Status:{" "}
-                  <span className="capitalize font-medium">
-                    {selectedApplication.application_status}
-                  </span>
-                  {selectedApplication.merit_score !== null &&
-                    selectedApplication.merit_score !== undefined && (
-                      <>
-                        {" · "}Merit Score:{" "}
-                        <span className="font-medium">
-                          {selectedApplication.merit_score}/100
-                        </span>
-                      </>
+      {selectedApplication && (() => {
+        // Helper function to format date as "March 15, 2024"
+        const formatAppliedDate = (dateString: string | null) => {
+          if (!dateString) return "";
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return "";
+          return date.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+        };
+
+        // Get applied date
+        const appliedDate = selectedApplication.recommendation_details?.applicationSubmittedOn 
+          || selectedApplication.submitted_at 
+          || null;
+        const formattedDate = formatAppliedDate(appliedDate);
+
+        // Get scholarship type based on course level priority
+        const getScholarshipType = () => {
+          return "Post-Graduation Scholarship";
+        };
+
+        // Format status
+        const formatStatus = (status: string) => {
+          return status
+            .split("_")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+        };
+
+        // Get rank
+        const rank = selectedApplication.recommendation_details?.finalRank || selectedApplication.finalRank;
+
+        // Get score
+        const score = selectedApplication.recommendation_details?.scoreBreakdown?.totalScore;
+
+        return (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4">
+            <div className="w-full max-w-5xl rounded-3xl bg-white border border-slate-200 shadow-2xl shadow-slate-900/30 overflow-hidden">
+              <div className="w-full max-w-5xl rounded-xl bg-gradient-to-r from-blue-500 to-blue-800 p-6 text-white relative">
+                {/* Close button */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedApplication(null)}
+                  className="absolute top-4 right-4 text-white text-xl hover:text-white/80 transition-colors"
+                >
+                  ×
+                </button>
+
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  {/* Left: Name, ID, and Applied Date */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 className="text-xl font-semibold">
+                        {selectedApplication.full_name || "Unnamed Applicant"}
+                      </h2>
+                      <span className="rounded-full bg-white/20 px-3 py-1 text-sm">
+                        ID: {selectedApplication.application_id.slice(-6).toUpperCase()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-white/80">
+                      {formattedDate && `Applied: ${formattedDate}`}
+                      {formattedDate && " • "}
+                      {getScholarshipType()}
+                    </p>
+                  </div>
+
+                  {/* Right: Stats */}
+                  <div className="flex gap-4 px-6 ">
+                    {!verificationInProgress && rank !== null && rank !== undefined && (
+                      <div className="rounded-lg bg-white/15 px-5 py-3 text-center">
+                        <p className="text-sm text-white/80">Rank</p>
+                        <p className="text-xl font-bold">#{rank} 🏆</p>
+                      </div>
                     )}
-                </p>
+                    {!verificationInProgress && score !== null && score !== undefined && (
+                      <div className="rounded-lg bg-white/15 px-5 py-3 text-center">
+                        <p className="text-sm text-white/80">Score</p>
+                        <p className="text-xl font-bold">{score.toFixed(2)}</p>
+                      </div>
+                    )}
+                    <div className="rounded-lg bg-white/15 px-5 py-3 text-center">
+                      <p className="text-sm text-white/80">Status</p>
+                      <p className="text-sm font-semibold text-green-300">
+                        {formatStatus(selectedApplication.application_status)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={async () => {
-                  setIsDownloading(true);
-                  try {
-                    const res = await fetch("/api/download-pdf", {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify({
-                        applicationId: selectedApplication.application_id,
-                        data: selectedApplication,
-                      }),
-                    });
 
-                    if (!res.ok) {
-                      let errorMessage = "Failed to generate PDF";
-                      try {
-                        const errorData = await res.json();
-                        errorMessage = errorData.error || errorMessage;
-                      } catch {
-                        // If response is not JSON, use default message
+              {/* Action Buttons Bar
+              <div className="px-6 py-4 border-b border-slate-200 bg-white flex items-center justify-end gap-3">
+                {!verificationInProgress && (
+                  <button
+                    type="button"
+                    onClick={() => setShowApprovalConfirmation(true)}
+                    className="rounded-lg bg-emerald-500 hover:bg-emerald-600 px-6 py-2 text-sm font-medium text-white transition-colors"
+                  >
+                    ✓ Approve Grant
+                  </button>
+                )}
+                <button
+                  onClick={async () => {
+                    setIsDownloading(true);
+                    try {
+                      const res = await fetch("/api/download-pdf", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                          applicationId: selectedApplication.application_id,
+                          data: selectedApplication,
+                        }),
+                      });
+
+                      if (!res.ok) {
+                        let errorMessage = "Failed to generate PDF";
+                        try {
+                          const errorData = await res.json();
+                          errorMessage = errorData.error || errorMessage;
+                        } catch {
+                          // If response is not JSON, use default message
+                        }
+                        throw new Error(errorMessage);
                       }
-                      throw new Error(errorMessage);
+
+                      const blob = await res.blob();
+                      const url = window.URL.createObjectURL(blob);
+
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `application-${selectedApplication.application_id}.pdf`;
+                      a.click();
+
+                      window.URL.revokeObjectURL(url);
+                    } catch (error) {
+                      alert(
+                        error instanceof Error
+                          ? error.message
+                          : "Failed to generate PDF. Please check your AWS S3 configuration."
+                      );
+                    } finally {
+                      setIsDownloading(false);
                     }
-
-                    const blob = await res.blob();
-                    const url = window.URL.createObjectURL(blob);
-
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `application-${selectedApplication.application_id}.pdf`;
-                    a.click();
-
-                    window.URL.revokeObjectURL(url);
-                  } catch (error) {
-                    alert(
-                      error instanceof Error
-                        ? error.message
-                        : "Failed to generate PDF. Please check your AWS S3 configuration."
-                    );
-                  } finally {
-                    setIsDownloading(false);
-                  }
-                }}
-                disabled={isDownloading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white text-purple-700 rounded-lg hover:bg-purple-50 disabled:bg-purple-100 disabled:text-purple-400 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-sm shadow-sm hover:shadow border border-purple-200 hover:border-purple-300"
-              >
-                {isDownloading ? (
-                  <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
+                  }}
+                  disabled={isDownloading}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white text-purple-700 rounded-lg hover:bg-purple-50 disabled:bg-purple-100 disabled:text-purple-400 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-sm shadow-sm hover:shadow border border-purple-200 hover:border-purple-300"
+                >
+                  {isDownloading ? (
+                    <>
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Generating PDF...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
                         stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Generating PDF...
-                  </>
-                ) : (
-                  <>
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      Download PDF
+                    </>
+                  )}
+                </button>
+              </div> */}
+
+              <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-5 max-h-[70vh] overflow-y-auto bg-slate-50">
+              {/* Personal Details Verifications Section */}
+              <section className="md:col-span-2 space-y-0 border-2 border-dashed border-blue-300 rounded-lg overflow-hidden">
+                {/* Header */}
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* Icon */}
                     <svg
-                      className="w-4 h-4"
+                      className="w-6 h-6 text-black"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -984,176 +1089,227 @@ function RecommendationPageData() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                       />
                     </svg>
-                    Download PDF
-                  </>
-                )}
-              </button>
-              <div className="flex items-center gap-2">
-                {!verificationInProgress && (
+                    <h3 className="text-base font-bold text-slate-900">
+                      01. Personal Details Verifications
+                    </h3>
+                    {/* Green Checkmark */}
+                    <svg
+                      className="w-5 h-5 text-green-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  {/* Collapse/Expand Control */}
                   <button
                     type="button"
-                    onClick={() => setShowApprovalConfirmation(true)}
-                    className="inline-flex items-center rounded-lg bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors"
+                    onClick={() =>
+                      setAccordionState((prev) => ({
+                        ...prev,
+                        personalDetailsVerification: !prev.personalDetailsVerification,
+                      }))
+                    }
+                    className="text-slate-900 hover:text-black/80 transition-colors"
                   >
-                    ✓ Approve Grant
+                    <svg
+                      className={`w-5 h-5 transition-transform ${
+                        accordionState.personalDetailsVerification ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 15l7-7 7 7"
+                      />
+                    </svg>
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setSelectedApplication(null)}
-                  className="text-white hover:text-white/80 text-lg px-2 py-1 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
+                </div>
 
-            <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-5 max-h-[70vh] overflow-y-auto bg-slate-50">
-              <section className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setAccordionState((prev) => ({
-                      ...prev,
-                      identityDetails: !prev.identityDetails,
-                    }))
-                  }
-                  className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
-                >
-                  <span className="text-xs">
-                    {accordionState.identityDetails ? "▼" : "▶"}
-                  </span>
-                  <h3>Identity Details</h3>
-                </button>
-                {accordionState.identityDetails && (
-                  <div className="space-y-2 text-xs text-slate-700">
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Full Name</span>
-                      <span className="font-medium text-right">
-                        {selectedApplication.full_name || "—"}
-                      </span>
+                {accordionState.personalDetailsVerification && (
+                  <div className="bg-white">
+                    {/* Tabs */}
+                    <div className="border-b border-slate-200 flex">
+                      <button
+                        type="button"
+                        onClick={() => setPersonalDetailsTab("identity")}
+                        className={`px-6 py-3 text-sm font-medium transition-colors ${
+                          personalDetailsTab === "identity"
+                            ? "text-blue-600 border-b-2 border-blue-600"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                      >
+                        Identity
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPersonalDetailsTab("personal")}
+                        className={`px-6 py-3 text-sm font-medium transition-colors ${
+                          personalDetailsTab === "personal"
+                            ? "text-blue-600 border-b-2 border-blue-600"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                      >
+                        Personal
+                      </button>
                     </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Aadhaar Number</span>
-                      <span className="font-medium text-right">
-                        {selectedApplication.aadhaar_number || "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">PAN Number</span>
-                      <span className="font-medium text-right">
-                        {selectedApplication.pan_number || "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Date of Birth</span>
-                      <span className="font-medium text-right">
-                        {selectedApplication.dob_year &&
-                        selectedApplication.dob_month &&
-                        selectedApplication.dob_day
-                          ? `${selectedApplication.dob_day}/${selectedApplication.dob_month}/${selectedApplication.dob_year}`
-                          : "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Category</span>
-                      <span className="font-medium text-right">
-                        {getCategoryFromApplication(selectedApplication)}
-                      </span>
-                    </div>
-                    {selectedApplication.merit_score !== null &&
-                      selectedApplication.merit_score !== undefined && (
-                        <div className="flex justify-between gap-4">
-                          <span className="text-slate-400">Merit Score</span>
-                          <span className="font-medium text-right">
-                            {selectedApplication.merit_score}/100
-                          </span>
+
+                    {/* Content */}
+                    <div className="p-6">
+                      {personalDetailsTab === "identity" ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Left Column */}
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Full Name</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.full_name || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Date of Birth</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.dob_year &&
+                                selectedApplication.dob_month &&
+                                selectedApplication.dob_day
+                                  ? new Date(
+                                      selectedApplication.dob_year,
+                                      selectedApplication.dob_month - 1,
+                                      selectedApplication.dob_day
+                                    ).toLocaleDateString("en-US", {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    })
+                                  : "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Category</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {getCategoryFromApplication(selectedApplication)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Mobile Number</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.phone
+                                  ? `+91 ${selectedApplication.phone}`
+                                  : "—"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Right Column */}
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Aadhaar Number</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.aadhaar_number
+                                  ? `XXXX-XXXX-${selectedApplication.aadhaar_number.slice(-4)}`
+                                  : "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Gender</p>
+                              <p className="text-sm font-semibold text-slate-900 capitalize">
+                                {selectedApplication.gender || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Disability Status</p>
+                              <p className="text-sm font-semibold text-slate-900">No</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Email Address</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.email || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Left Column */}
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Father&apos;s Name</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.father_name || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Mother&apos;s Name</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.mother_name || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Marital Status</p>
+                              <p className="text-sm font-semibold text-slate-900 capitalize">
+                                {selectedApplication.marital_status || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Phone</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.phone || "—"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Right Column */}
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Gender</p>
+                              <p className="text-sm font-semibold text-slate-900 capitalize">
+                                {selectedApplication.gender || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Mother Tongue</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.mother_tongue || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Email</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.email || "—"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">Address</p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {selectedApplication.address ||
+                                selectedApplication.city ||
+                                selectedApplication.state ||
+                                selectedApplication.pincode
+                                  ? [
+                                      selectedApplication.address,
+                                      selectedApplication.city,
+                                      selectedApplication.state,
+                                      selectedApplication.pincode,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(", ")
+                                  : "—"}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       )}
-                  </div>
-                )}
-              </section>
-
-              <section className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setAccordionState((prev) => ({
-                      ...prev,
-                      personalDetails: !prev.personalDetails,
-                    }))
-                  }
-                  className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
-                >
-                  <span className="text-xs">
-                    {accordionState.personalDetails ? "▼" : "▶"}
-                  </span>
-                  <h3>Personal Details</h3>
-                </button>
-                {accordionState.personalDetails && (
-                  <div className="space-y-2 text-xs text-slate-700">
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Father&apos;s Name</span>
-                      <span className="font-medium text-right">
-                        {selectedApplication.father_name || "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Mother&apos;s Name</span>
-                      <span className="font-medium text-right">
-                        {selectedApplication.mother_name || "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Gender</span>
-                      <span className="font-medium text-right capitalize">
-                        {selectedApplication.gender || "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Marital Status</span>
-                      <span className="font-medium text-right capitalize">
-                        {selectedApplication.marital_status || "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Mother Tongue</span>
-                      <span className="font-medium text-right">
-                        {selectedApplication.mother_tongue || "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Phone</span>
-                      <span className="font-medium text-right">
-                        {selectedApplication.phone || "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Email</span>
-                      <span className="font-medium text-right">
-                        {selectedApplication.email || "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Address</span>
-                      <span className="font-medium text-right">
-                        {selectedApplication.address ||
-                        selectedApplication.city ||
-                        selectedApplication.state ||
-                        selectedApplication.pincode
-                          ? [
-                              selectedApplication.address,
-                              selectedApplication.city,
-                              selectedApplication.state,
-                              selectedApplication.pincode,
-                            ]
-                              .filter(Boolean)
-                              .join(", ")
-                          : "—"}
-                      </span>
                     </div>
                   </div>
                 )}
@@ -2233,7 +2389,8 @@ function RecommendationPageData() {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Approval Confirmation Modal */}
       {showApprovalConfirmation && selectedApplication && (
