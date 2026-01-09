@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
@@ -74,18 +75,17 @@ export default function RegisterPage() {
     <div className="min-h-screen app-background flex items-center justify-center px-4 py-10">
       <div className="max-w-6xl w-full flex flex-col lg:flex-row items-center gap-16 relative z-10">
         <div className="flex-1 text-center lg:text-left">
-          <div className="inline-flex items-center gap-3 mb-6">
-            <div className="h-12 w-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
-              <span className="text-2xl font-semibold text-white">IQ</span>
-            </div>
-            <div>
-              <p className="text-sm uppercase tracking-wider text-blue-600 font-semibold">
-                GrantIQ
-              </p>
-              <p className="text-base font-semibold text-slate-700">
-                Smart Scholarship Management for Grantors
-              </p>
-            </div>
+          <div className="mb-6">
+            <Image
+              src="/logo_dark.svg"
+              alt="GrantIQ Logo"
+              width={180}
+              height={54}
+              priority
+            />
+            <p className="py-2 text-base font-semibold text-slate-700">
+              Smart Scholarship Management for Grantors
+            </p>
           </div>
           <h1 className="text-4xl md:text-5xl font-semibold leading-tight mb-4 text-slate-900">
             Create Grantor Account
