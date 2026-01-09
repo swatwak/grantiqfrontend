@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { drawApplicationTables } from "./helper";
 
@@ -86,12 +86,7 @@ export async function POST(req: Request) {
     // const finalPdf = await PDFDocument.create();
     const finalPdf = await PDFDocument.create();
     await drawApplicationTables(finalPdf, data);
-    const font = await finalPdf.embedFont(StandardFonts.Helvetica);
-
-    const pages = finalPdf.getPages();
-    const lastPage = pages[pages.length - 1];
-
-    const { width, height } = lastPage.getSize();
+    const font = await finalPdf.embedFont(StandardFonts.HelveticaBold);
 
     /* -----------------------------
        ATTACH S3 PDFs
@@ -118,16 +113,21 @@ export async function POST(req: Request) {
           attachedPdf.getPageIndices()
         );
 
-        // Heading page
-        const titlePage = finalPdf.addPage();
-        titlePage.drawText(doc.name, {
-          x: 50,
-          y: height - 60,
-          size: 16,
-          font,
-        });
+        // Add copied pages and add title on the first page
+        copiedPages.forEach((p, index) => {
+          finalPdf.addPage(p);
 
-        copiedPages.forEach((p) => finalPdf.addPage(p));
+          // Add document title overlay on the first page of each document
+          if (index === 0) {
+            p.drawText(doc.name, {
+              x: 10,
+              y: p.getHeight() - 20,
+              size: 14,
+              font: font,
+              color: rgb(0.12, 0.35, 0.75),
+            });
+          }
+        });
       } catch (error: any) {
         console.error(error);
         // If document doesn't exist or can't be accessed, skip it
