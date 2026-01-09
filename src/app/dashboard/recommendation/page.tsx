@@ -201,6 +201,7 @@ function RecommendationPageData() {
     documentDetails: false,
     universityDetails: false,
     recommendationsDetailsTable: true, // Default open for the table
+    sourceVerifications: false, // For 03 Verifications by Source section
   });
 
   // Tab state for Personal Details Verifications
@@ -263,6 +264,7 @@ function RecommendationPageData() {
         documentDetails: false,
         universityDetails: false,
         recommendationsDetailsTable: true,
+        sourceVerifications: false,
       });
     }
   }, [verificationInProgress]);
@@ -279,6 +281,7 @@ function RecommendationPageData() {
         documentDetails: false,
         universityDetails: false,
         recommendationsDetailsTable: true,
+        sourceVerifications: false,
       });
       // Reset verification details when application changes
       setShowVerificationDetails(false);
@@ -638,6 +641,10 @@ function RecommendationPageData() {
 
       setVerificationResults(results);
       setShowVerificationDetails(true);
+      setAccordionState((prev) => ({
+        ...prev,
+        sourceVerifications: true, // Expand the section when verification is fetched
+      }));
     } catch (err) {
       const message =
         err instanceof Error
@@ -1077,7 +1084,7 @@ function RecommendationPageData() {
 
               <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-5 max-h-[70vh] overflow-y-auto bg-slate-50">
               {/* Personal Details Verifications Section */}
-              <section className="md:col-span-2 space-y-0 border-2 border-dashed border-blue-300 rounded-lg overflow-hidden">
+              <section className="md:col-span-2 space-y-0 border-2 rounded-lg overflow-hidden">
                 {/* Header */}
                 <div className="px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1096,7 +1103,7 @@ function RecommendationPageData() {
                       />
                     </svg>
                     <h3 className="text-base font-bold text-slate-900">
-                      01. Personal Details Verifications
+                      01 Personal Details Verifications
                     </h3>
                     {/* Green Checkmark */}
                     <svg
@@ -1325,84 +1332,56 @@ function RecommendationPageData() {
                 if (!validationData) return null;
 
                 return (
-                  <section className="md:col-span-2 space-y-0 border-2 border-dashed border-blue-300 rounded-lg overflow-hidden">
+                  <section className="md:col-span-2 space-y-0 border-2 rounded-lg overflow-hidden">
                     {/* Header */}
                     <div className="px-4 py-3 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        {/* Icon */}
-                        <svg
-                          className="w-6 h-6 text-black"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
+                        {/* Document Icon with Paperclip */}
+                        <div className="relative">
+                          <svg
+                            className="w-6 h-6 text-blue-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          <svg
+                            className="w-3 h-3 text-blue-600 absolute -top-1 -right-1"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
                         <h3 className="text-base font-bold text-slate-900">
-                          02. Document Validation Results
+                          02 Document Validations Results
                         </h3>
                         {/* Green Checkmark */}
-                        <svg
-                          className="w-5 h-5 text-green-400"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
+                        <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={handleFetchVerification}
-                          disabled={isLoadingVerification}
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-                            isLoadingVerification
-                              ? "bg-slate-100 text-slate-700 border border-slate-300"
-                              : "bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
-                          }`}
-                        >
-                          {isLoadingVerification ? (
-                            <>
-                              <span className="inline-flex h-3 w-3 items-center justify-center">
-                                <svg
-                                  className="animate-spin h-2.5 w-2.5"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                  ></circle>
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                  ></path>
-                                </svg>
-                              </span>
-                              <span>Loading...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-sm">🔍</span>
-                              <span>Verification</span>
-                            </>
-                          )}
-                        </button>
                         {/* Collapse/Expand Control */}
                         <button
                           type="button"
@@ -1434,197 +1413,234 @@ function RecommendationPageData() {
                     </div>
 
                     {accordionState.verificationResults && (
-                      <div className="bg-white p-6">
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                            {Object.entries(
-                              validationData.verification_results || {}
-                            ).map(([docType, result]: [string, any]) => (
+                      <div className="bg-gray-50 p-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {Object.entries(
+                            validationData.verification_results || {}
+                          ).map(([docType, result]: [string, any], index) => {
+                            const cardNumber = `2.${index + 1}`;
+                            const docLabel = getDocumentTypeLabel(docType);
+                            
+                            return (
                               <div
                                 key={docType}
-                                className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-md ${
-                                  result.success && result.is_eligible === true
-                                    ? "border-emerald-300 bg-emerald-50/50"
-                                    : result.success &&
-                                      result.is_eligible === false
-                                    ? "border-amber-300 bg-amber-50/50"
-                                    : result.success &&
-                                      result.is_eligible === null
-                                    ? "border-blue-300 bg-blue-50/50"
-                                    : "border-rose-300 bg-rose-50/50"
-                                }`}
+                                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
                               >
-                                <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="text-xs font-semibold text-slate-900">
-                                      {getDocumentTypeLabel(docType)}
-                                    </h4>
-                                    <span
-                                      className={`inline-flex items-center gap-1 text-[10px] font-bold ${
-                                        result.success &&
-                                        result.is_eligible === true
-                                          ? "text-emerald-700"
-                                          : result.success &&
-                                            result.is_eligible === false
-                                          ? "text-amber-700"
-                                          : result.success &&
-                                            result.is_eligible === null
-                                          ? "text-blue-700"
-                                          : "text-rose-700"
-                                      }`}
-                                    >
-                                      {result.success &&
-                                      result.is_eligible === true
-                                        ? "✓ ELIGIBLE"
-                                        : result.success &&
-                                          result.is_eligible === false
-                                        ? "✗ NOT ELIGIBLE"
-                                        : result.success &&
-                                          result.is_eligible === null
-                                        ? "? REVIEW"
-                                        : "✗ FAILED"}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="px-4 py-3 space-y-2">
-                                  <p className="text-xs text-slate-700 leading-relaxed">
-                                    {result.message ||
-                                      "No verification message available"}
-                                  </p>
-
-                                  {result.data && (
-                                    <div className="mt-3 pt-3 border-t border-slate-200 space-y-1.5">
-                                      {result.data.gross_income_numeric !==
-                                        undefined && (
-                                        <div className="flex justify-between items-center text-[11px]">
-                                          <span className="text-slate-500 font-medium">
-                                            Gross Income
-                                          </span>
-                                          <span className="font-semibold text-slate-900">
-                                            ₹
-                                            {result.data.gross_income_numeric.toLocaleString(
-                                              "en-IN"
-                                            )}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {result.data.income_limit !== undefined && (
-                                        <div className="flex justify-between items-center text-[11px]">
-                                          <span className="text-slate-500 font-medium">
-                                            Income Limit
-                                          </span>
-                                          <span className="font-semibold text-slate-900">
-                                            ₹
-                                            {result.data.income_limit.toLocaleString(
-                                              "en-IN"
-                                            )}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {result.data.percentage !== undefined &&
-                                        result.data.percentage !== null && (
-                                          <div className="flex justify-between items-center text-[11px]">
-                                            <span className="text-slate-500 font-medium">
-                                              Percentage
-                                            </span>
-                                            <span className="font-semibold text-slate-900">
-                                              {typeof result.data.percentage ===
-                                              "number"
-                                                ? `${result.data.percentage.toFixed(
-                                                    2
-                                                  )}%`
-                                                : result.data.percentage}
-                                            </span>
-                                          </div>
-                                        )}
-                                      {result.data.percentage_numeric !==
-                                        undefined &&
-                                        result.data.percentage_numeric !==
-                                          null && (
-                                          <div className="flex justify-between items-center text-[11px]">
-                                            <span className="text-slate-500 font-medium">
-                                              Percentage
-                                            </span>
-                                            <span className="font-semibold text-slate-900">
-                                              {result.data.percentage_numeric.toFixed(
-                                                2
-                                              )}
-                                              %
-                                            </span>
-                                          </div>
-                                        )}
-                                      {result.data.cgpa !== undefined &&
-                                        result.data.cgpa !== null && (
-                                          <div className="flex justify-between items-center text-[11px]">
-                                            <span className="text-slate-500 font-medium">
-                                              CGPA
-                                            </span>
-                                            <span className="font-semibold text-slate-900">
-                                              {result.data.cgpa}
-                                              {result.data.cgpa_scale &&
-                                                ` / ${result.data.cgpa_scale}`}
-                                            </span>
-                                          </div>
-                                        )}
-                                      {result.data.category && (
-                                        <div className="flex justify-between items-center text-[11px]">
-                                          <span className="text-slate-500 font-medium">
-                                            Category
-                                          </span>
-                                          <span className="font-semibold text-slate-900 uppercase">
-                                            {result.data.category}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {result.data.extracted_caste &&
-                                        result.data.extracted_caste !==
-                                          "Not Available" && (
-                                          <div className="flex justify-between items-center text-[11px]">
-                                            <span className="text-slate-500 font-medium">
-                                              Extracted Caste
-                                            </span>
-                                            <span className="font-semibold text-slate-900">
-                                              {result.data.extracted_caste}
-                                            </span>
-                                          </div>
-                                        )}
-                                      {result.data.extracted_name && (
-                                        <div className="flex justify-between items-center text-[11px]">
-                                          <span className="text-slate-500 font-medium">
-                                            Document Name
-                                          </span>
-                                          <span className="font-semibold text-slate-900">
-                                            {result.data.extracted_name}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {result.data.student_name && (
-                                        <div className="flex justify-between items-center text-[11px]">
-                                          <span className="text-slate-500 font-medium">
-                                            Student Name
-                                          </span>
-                                          <span className="font-semibold text-slate-900">
-                                            {result.data.student_name}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {result.data.year_of_passing && (
-                                        <div className="flex justify-between items-center text-[11px]">
-                                          <span className="text-slate-500 font-medium">
-                                            Year of Passing
-                                          </span>
-                                          <span className="font-semibold text-slate-900">
-                                            {result.data.year_of_passing}
-                                          </span>
-                                        </div>
-                                      )}
+                                {/* Card Header */}
+                                <div className="flex items-center justify-between mb-3">
+                                  <h4 className="text-sm font-semibold text-slate-900">
+                                    {cardNumber} {docLabel}
+                                  </h4>
+                                  {result.success && result.is_eligible === true && (
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                        <svg
+                                          className="w-3 h-3 text-white"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                      </div>
+                                      <span className="text-xs font-semibold text-green-700">
+                                        Eligible
+                                      </span>
+                                    </div>
+                                  )}
+                                  {result.success && result.is_eligible === false && (
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
+                                        <svg
+                                          className="w-3 h-3 text-white"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                      </div>
+                                      <span className="text-xs font-semibold text-amber-700">
+                                        Not Eligible
+                                      </span>
+                                    </div>
+                                  )}
+                                  {result.success && result.is_eligible === null && (
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                        <span className="text-white text-xs font-bold">?</span>
+                                      </div>
+                                      <span className="text-xs font-semibold text-blue-700">
+                                        Review
+                                      </span>
+                                    </div>
+                                  )}
+                                  {!result.success && (
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                                        <svg
+                                          className="w-3 h-3 text-white"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                      </div>
+                                      <span className="text-xs font-semibold text-red-700">
+                                        Failed
+                                      </span>
                                     </div>
                                   )}
                                 </div>
+
+                                {/* Description */}
+                                <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                                  {result.message ||
+                                    "No verification message available"}
+                                </p>
+
+                                {/* Details */}
+                                {result.data && (
+                                  <div className="space-y-2 pt-3 border-t border-gray-200">
+                                    {result.data.gross_income_numeric !==
+                                      undefined && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-600">
+                                          Gross Income
+                                        </span>
+                                        <span className="text-xs font-semibold text-slate-900">
+                                          ₹
+                                          {result.data.gross_income_numeric.toLocaleString(
+                                            "en-IN"
+                                          )}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {result.data.income_limit !== undefined && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-600">
+                                          Income Limit
+                                        </span>
+                                        <span className="text-xs font-semibold text-slate-900">
+                                          ₹
+                                          {result.data.income_limit.toLocaleString(
+                                            "en-IN"
+                                          )}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {result.data.percentage !== undefined &&
+                                      result.data.percentage !== null && (
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-slate-600">
+                                            Percentage
+                                          </span>
+                                          <span className="text-xs font-semibold text-slate-900">
+                                            {typeof result.data.percentage ===
+                                            "number"
+                                              ? `${result.data.percentage.toFixed(
+                                                  2
+                                                )}%`
+                                              : result.data.percentage}
+                                          </span>
+                                        </div>
+                                      )}
+                                    {result.data.percentage_numeric !==
+                                      undefined &&
+                                      result.data.percentage_numeric !==
+                                        null && (
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-slate-600">
+                                            Percentage
+                                          </span>
+                                          <span className="text-xs font-semibold text-slate-900">
+                                            {result.data.percentage_numeric.toFixed(
+                                              2
+                                            )}
+                                            %
+                                          </span>
+                                        </div>
+                                      )}
+                                    {result.data.cgpa !== undefined &&
+                                      result.data.cgpa !== null && (
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-slate-600">
+                                            CGPA
+                                          </span>
+                                          <span className="text-xs font-semibold text-slate-900">
+                                            {result.data.cgpa}
+                                            {result.data.cgpa_scale &&
+                                              ` / ${result.data.cgpa_scale}`}
+                                          </span>
+                                        </div>
+                                      )}
+                                    {result.data.category && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-600">
+                                          Category
+                                        </span>
+                                        <span className="text-xs font-semibold text-slate-900 uppercase">
+                                          {result.data.category}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {result.data.extracted_caste &&
+                                      result.data.extracted_caste !==
+                                        "Not Available" && (
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-slate-600">
+                                            Extracted Caste
+                                          </span>
+                                          <span className="text-xs font-semibold text-slate-900">
+                                            {result.data.extracted_caste}
+                                          </span>
+                                        </div>
+                                      )}
+                                    {result.data.extracted_name && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-600">
+                                          Document Name
+                                        </span>
+                                        <span className="text-xs font-semibold text-slate-900">
+                                          {result.data.extracted_name}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {result.data.student_name && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-600">
+                                          Student Name
+                                        </span>
+                                        <span className="text-xs font-semibold text-slate-900">
+                                          {result.data.student_name}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {result.data.year_of_passing && (
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-slate-600">
+                                          Year of Passing
+                                        </span>
+                                        <span className="text-xs font-semibold text-slate-900">
+                                          {result.data.year_of_passing}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                            ))}
-                          </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -1632,238 +1648,314 @@ function RecommendationPageData() {
                 );
               })()}
 
-              {selectedApplication.recommendation_details &&
-                !verificationInProgress && (
-                  <section className="md:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setAccordionState((prev) => ({
-                            ...prev,
-                            recommendationDetails: !prev.recommendationDetails,
-                          }))
-                        }
-                        className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
+              {/* 03 Verifications by Source Section */}
+              <section className="md:col-span-2 space-y-0 border-2 rounded-lg overflow-hidden">
+                {/* Header */}
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* Icon */}
+                    <svg
+                      className="w-6 h-6 text-black"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <h3 className="text-base font-bold text-slate-900">
+                      03 Verifications by Source
+                    </h3>
+                    {/* Green Checkmark */}
+                    {showVerificationDetails && verificationResults && (
+                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-3 h-3 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleFetchVerification}
+                      disabled={isLoadingVerification}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                        isLoadingVerification
+                          ? "bg-slate-100 text-slate-700 border border-slate-300"
+                          : "bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
+                      }`}
+                    >
+                      {isLoadingVerification ? (
+                        <>
+                          <span className="inline-flex h-3 w-3 items-center justify-center">
+                            <svg
+                              className="animate-spin h-2.5 w-2.5"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                          </span>
+                          <span>Loading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-sm">🔍</span>
+                          <span>Verification</span>
+                        </>
+                      )}
+                    </button>
+                    {/* Collapse/Expand Control */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAccordionState((prev) => ({
+                          ...prev,
+                          sourceVerifications: !prev.sourceVerifications,
+                        }))
+                      }
+                      className="text-slate-900 hover:text-black/80 transition-colors"
+                    >
+                      <svg
+                        className={`w-5 h-5 transition-transform ${
+                          accordionState.sourceVerifications ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        <span className="text-xs">
-                          {accordionState.recommendationDetails ? "▼" : "▶"}
-                        </span>
-                        <h3>Recommendation Details</h3>
-                      </button>
-                      <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold bg-purple-100 text-purple-700 border border-purple-300">
-                        <span className="text-sm">📊</span>
-                        Rank #
-                        {selectedApplication.recommendation_details.finalRank ||
-                          selectedApplication.finalRank ||
-                          "—"}
-                      </span>
-                    </div>
-                    {accordionState.recommendationDetails && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                          {/* Course Level Priority */}
-                          <div className="rounded-xl border-2 overflow-hidden border-blue-300 bg-blue-50/50">
-                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-semibold text-slate-900">
-                                  Course Level Priority 12
-                                </h4>
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700">
-                                  Priority{" "}
-                                  {selectedApplication.recommendation_details
-                                    .courseLevelPriority ?? "—"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="px-4 py-3 space-y-2">
-                              <p className="text-xs text-slate-700 leading-relaxed">
-                                Priority level based on course type (PhD &gt;
-                                Masters &gt; Bachelors).
-                              </p>
-                            </div>
-                          </div>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 15l7-7 7 7"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
 
-                          {/* University Ranking */}
-                          <div className="rounded-xl border-2 overflow-hidden border-amber-300 bg-amber-50/50">
-                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-semibold text-slate-900">
-                                  University Ranking
-                                </h4>
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700">
-                                  #
-                                  {selectedApplication.recommendation_details
-                                    .universityRanking ?? "—"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="px-4 py-3 space-y-2">
-                              <p className="text-xs text-slate-700 leading-relaxed">
-                                Global or national ranking of the target
-                                university.
-                              </p>
-                            </div>
-                          </div>
+                {accordionState.sourceVerifications && showVerificationDetails && verificationResults && (
+                  <div className="bg-white p-6">
+                    {(() => {
+                      const documentEntries = Object.entries(
+                        verificationResults
+                      ).filter(([docType, docData]) => {
+                        if (docType === "application_id") return false;
+                        if (!docData || typeof docData !== "object") return false;
+                        return true;
+                      });
 
-                          {/* Days Until Course Start */}
-                          <div className="rounded-xl border-2 overflow-hidden border-sky-300 bg-sky-50/50">
-                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-semibold text-slate-900">
-                                  Days Until Course Start
-                                </h4>
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700">
-                                  {selectedApplication.recommendation_details
-                                    .daysUntilCourseStart ?? "—"}{" "}
-                                  days
-                                </span>
-                              </div>
-                            </div>
-                            <div className="px-4 py-3 space-y-2">
-                              <p className="text-xs text-slate-700 leading-relaxed">
-                                Time remaining before the course begins. Earlier
-                                starts may get priority.
-                              </p>
-                            </div>
+                      if (documentEntries.length === 0) {
+                        return (
+                          <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
+                            <p className="text-xs text-slate-600">
+                              No verification results available for this
+                              application.
+                            </p>
                           </div>
+                        );
+                      }
 
-                          {/* First Time Beneficiary */}
-                          <div
-                            className={`rounded-xl border-2 overflow-hidden ${
-                              selectedApplication.recommendation_details
-                                .isFirstTimeBeneficiary
-                                ? "border-emerald-300 bg-emerald-50/50"
-                                : "border-slate-300 bg-slate-50/50"
-                            }`}
-                          >
-                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-semibold text-slate-900">
-                                  First Time Beneficiary
-                                </h4>
-                                <span
-                                  className={`inline-flex items-center gap-1 text-[10px] font-bold ${
-                                    selectedApplication.recommendation_details
-                                      .isFirstTimeBeneficiary
-                                      ? "text-emerald-700"
-                                      : "text-slate-700"
-                                  }`}
+                      return (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {documentEntries.map(
+                            ([docType, docData]: [string, any], index) => {
+                              if (!Array.isArray(docData) || docData.length === 0)
+                                return null;
+                              const latest = docData[docData.length - 1];
+                              const verificationValue =
+                                latest?.result?.verification;
+                              // true | false | null
+
+                              const verificationState =
+                                verificationValue === true
+                                  ? "verified"
+                                  : verificationValue === false
+                                  ? "failed"
+                                  : "inprogress";
+
+                              const reason = latest?.result?.reason || null;
+                              const dataReceived = latest?.data_received || {};
+                              const verificationType =
+                                latest?.verification_type || "Unknown";
+                              const source = latest?.result?.source || null;
+                              const cardNumber = `3.${index + 1}`;
+
+                              return (
+                                <div
+                                  key={docType}
+                                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
                                 >
-                                  {selectedApplication.recommendation_details
-                                    .isFirstTimeBeneficiary
-                                    ? "✓ Yes"
-                                    : "✗ No"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="px-4 py-3 space-y-2">
-                              <p className="text-xs text-slate-700 leading-relaxed">
-                                First-time applicants may receive additional
-                                priority.
-                              </p>
-                            </div>
-                          </div>
+                                  {/* Card Header */}
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                      <h4 className="text-sm font-semibold text-slate-900">
+                                        {cardNumber} {getDocumentTypeLabel(docType)}
+                                      </h4>
+                                      <p className="text-xs text-slate-600 mt-1">
+                                        {verificationType}
+                                      </p>
+                                    </div>
+                                    {verificationState === "verified" && (
+                                      <div className="flex items-center gap-1.5">
+                                        <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                          <svg
+                                            className="w-3 h-3 text-white"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                        </div>
+                                        <span className="text-xs font-semibold text-green-700">
+                                          Verified
+                                        </span>
+                                      </div>
+                                    )}
+                                    {verificationState === "failed" && (
+                                      <div className="flex items-center gap-1.5">
+                                        <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                                          <svg
+                                            className="w-3 h-3 text-white"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                        </div>
+                                        <span className="text-xs font-semibold text-red-700">
+                                          Not Verified
+                                        </span>
+                                      </div>
+                                    )}
+                                    {verificationState === "inprogress" && (
+                                      <div className="flex items-center gap-1.5">
+                                        <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
+                                          <span className="text-white text-xs font-bold">⏳</span>
+                                        </div>
+                                        <span className="text-xs font-semibold text-amber-700">
+                                          In Progress
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
 
-                          {/* Annual Family Income */}
-                          <div className="rounded-xl border-2 overflow-hidden border-teal-300 bg-teal-50/50">
-                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-semibold text-slate-900">
-                                  Annual Family Income
-                                </h4>
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-teal-700">
-                                  ₹
-                                  {selectedApplication.recommendation_details.annualFamilyIncome?.toLocaleString(
-                                    "en-IN"
-                                  ) ?? "—"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="px-4 py-3 space-y-2">
-                              <p className="text-xs text-slate-700 leading-relaxed">
-                                Total annual income of the applicant&apos;s
-                                family. Lower income may receive higher
-                                priority.
-                              </p>
-                            </div>
-                          </div>
+                                  <div className="space-y-3">
+                                    {reason && (
+                                      <div className="rounded-lg bg-yellow-50 border border-yellow-200 px-3 py-2">
+                                        <p className="text-xs text-yellow-800">
+                                          <span>Status Details:</span>
+                                          <br />
+                                          <span>{reason}</span>
+                                        </p>
+                                      </div>
+                                    )}
+                                    {!reason &&
+                                      verificationState === "failed" && (
+                                        <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+                                          <p className="text-xs text-slate-600">
+                                            Verification failed. No specific
+                                            reason provided.
+                                          </p>
+                                        </div>
+                                      )}
+                                    {source && (
+                                      <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
+                                        <p className="text-xs text-blue-800">
+                                          <span>Verified Sources:</span>
+                                          <br />
+                                          <span>{source}</span>
+                                        </p>
+                                      </div>
+                                    )}
 
-                          {/* Qualifying Degree Percentage */}
-                          <div className="rounded-xl border-2 overflow-hidden border-indigo-300 bg-indigo-50/50">
-                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-semibold text-slate-900">
-                                  Qualifying Degree Percentage
-                                </h4>
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700">
-                                  {selectedApplication.recommendation_details
-                                    .qualifyingDegreePercentage != null
-                                    ? `${selectedApplication.recommendation_details.qualifyingDegreePercentage.toFixed(
-                                        2
-                                      )}%`
-                                    : "—"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="px-4 py-3 space-y-2">
-                              <p className="text-xs text-slate-700 leading-relaxed">
-                                Percentage scored in the qualifying degree
-                                examination.
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Application Submitted On */}
-                          <div className="rounded-xl border-2 overflow-hidden border-rose-300 bg-rose-50/50">
-                            <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-semibold text-slate-900">
-                                  Application Submitted On
-                                </h4>
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700">
-                                  {selectedApplication.recommendation_details
-                                    .applicationSubmittedOn
-                                    ? formatDate(
-                                        selectedApplication
-                                          .recommendation_details
-                                          .applicationSubmittedOn
-                                      )
-                                    : "—"}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="px-4 py-3 space-y-2">
-                              <p className="text-xs text-slate-700 leading-relaxed">
-                                Date when the application was submitted. Earlier
-                                submissions may be prioritized.
-                              </p>
-                            </div>
-                          </div>
+                                    {Object.keys(dataReceived).length > 0 && (
+                                      <div className="space-y-2 pt-3 border-t border-gray-200">
+                                        {Object.entries(dataReceived).map(
+                                          ([key, value]) => (
+                                            <div
+                                              key={key}
+                                              className="flex justify-between items-center"
+                                            >
+                                              <span className="text-xs text-slate-600 capitalize">
+                                                {key.replace(/_/g, " ")}:
+                                              </span>
+                                              <span className="text-xs font-semibold text-slate-900 text-right">
+                                                {typeof value === "number"
+                                                  ? value.toLocaleString(
+                                                      "en-IN"
+                                                    )
+                                                  : String(value)}
+                                              </span>
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            }
+                          )}
                         </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </section>
 
-                        <div className="rounded-xl px-4 py-3 border bg-purple-50 border-purple-300">
-                          <p className="text-xs font-medium text-slate-700">
-                            <span className="font-semibold">
-                              Final Ranking:{" "}
-                            </span>
-                            This applicant is ranked{" "}
-                            <span className="font-bold text-purple-700">
-                              #
-                              {selectedApplication.recommendation_details
-                                .finalRank ||
-                                selectedApplication.finalRank ||
-                                "—"}
-                            </span>{" "}
-                            based on the weighted scoring of all recommendation
-                            factors above.
-                          </p>
-                        </div>
+              {verificationError && (
+                <section className="md:col-span-2">
+                  <div className="rounded-xl bg-rose-50 border border-rose-200 px-4 py-3">
+                    <p className="text-xs text-rose-700">
+                      <span className="font-semibold">Error: </span>
+                      {verificationError}
+                    </p>
+                  </div>
+                </section>
+              )}
 
-                        {/* Recommendations Details Table */}
-                        {selectedApplication.recommendation_details
-                          .scoreBreakdown && (
-                          <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+              {selectedApplication.recommendation_details &&
+                !verificationInProgress &&
+                selectedApplication.recommendation_details.scoreBreakdown && (
+                  <section className="md:col-span-2 space-y-4">
+                    {/* Recommendations Details Table */}
+                    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
                             {/* Header */}
                             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                               <div className="flex items-center gap-2">
@@ -2062,9 +2154,6 @@ function RecommendationPageData() {
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    )}
                   </section>
                 )}
 
@@ -2080,417 +2169,7 @@ function RecommendationPageData() {
                 </section>
               )}
 
-              {showVerificationDetails && verificationResults && (
-                <section className="md:col-span-2 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setShowVerificationDetails(false)}
-                      className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
-                    >
-                      <span className="text-xs">▼</span>
-                      <h3>🔍 Source Verification Results</h3>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowVerificationDetails(false)}
-                      className="text-xs text-slate-500 hover:text-slate-700"
-                    >
-                      Hide
-                    </button>
-                  </div>
 
-                  {(() => {
-                    const documentEntries = Object.entries(
-                      verificationResults
-                    ).filter(([docType, docData]) => {
-                      if (docType === "application_id") return false;
-                      if (!docData || typeof docData !== "object") return false;
-                      return true;
-                    });
-
-                    if (documentEntries.length === 0) {
-                      return (
-                        <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3">
-                          <p className="text-xs text-slate-600">
-                            No verification results available for this
-                            application.
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                        {documentEntries.map(
-                          ([docType, docData]: [string, any]) => {
-                            if (!Array.isArray(docData) || docData.length === 0)
-                              return null;
-                            const latest = docData[docData.length - 1];
-                            const verificationValue =
-                              latest?.result?.verification;
-                            // true | false | null
-
-                            const verificationState =
-                              verificationValue === true
-                                ? "verified"
-                                : verificationValue === false
-                                ? "failed"
-                                : "inprogress";
-
-                            const reason = latest?.result?.reason || null;
-                            const dataReceived = latest?.data_received || {};
-                            const verificationType =
-                              latest?.verification_type || "Unknown";
-                            const source = latest?.result?.source || null;
-
-                            return (
-                              <div
-                                key={docType}
-                                className={`rounded-xl border-2 overflow-hidden transition-all hover:shadow-md ${
-                                  verificationState === "verified"
-                                    ? "border-emerald-300 bg-emerald-50/50"
-                                    : verificationState === "failed"
-                                    ? "border-rose-300 bg-rose-50/50"
-                                    : "border-amber-300 bg-amber-50/50"
-                                }`}
-                              >
-                                <div className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-                                  <div className="flex items-center justify-between">
-                                    <h4 className="text-xs font-semibold text-slate-900">
-                                      {getDocumentTypeLabel(docType)}
-                                    </h4>
-                                    <span
-                                      className={`inline-flex items-center gap-1 text-[10px] font-bold ${
-                                        verificationState === "verified"
-                                          ? "text-emerald-700"
-                                          : verificationState === "failed"
-                                          ? "text-rose-700"
-                                          : "text-amber-700"
-                                      }`}
-                                    >
-                                      {verificationState === "verified" && (
-                                        <>
-                                          <span>✓</span>
-                                          <span>VERIFIED</span>
-                                        </>
-                                      )}
-
-                                      {verificationState === "failed" && (
-                                        <>
-                                          <span>✗</span>
-                                          <span>NOT VERIFIED</span>
-                                        </>
-                                      )}
-
-                                      {verificationState === "inprogress" && (
-                                        <>
-                                          <span>⏳</span>
-                                          <span>IN PROGRESS</span>
-                                        </>
-                                      )}
-                                    </span>
-                                  </div>
-                                  <p className="text-[10px] text-slate-600 mt-1">
-                                    {verificationType}
-                                  </p>
-                                </div>
-
-                                <div className="px-4 py-3 space-y-3">
-                                  {reason && (
-                                    <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
-                                      <p className="text-[10px] font-semibold text-amber-800 mb-1">
-                                        Reason:
-                                      </p>
-                                      <p className="text-xs text-amber-700">
-                                        {reason}
-                                      </p>
-                                    </div>
-                                  )}
-                                  {!reason &&
-                                    verificationState === "failed" && (
-                                      <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
-                                        <p className="text-xs text-slate-600">
-                                          Verification failed. No specific
-                                          reason provided.
-                                        </p>
-                                      </div>
-                                    )}
-                                  {source && (
-                                    <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
-                                      <p className="text-[10px] font-semibold text-slate-600 mb-1">
-                                        Verified Source:
-                                      </p>
-                                      <p className="text-xs text-slate-700">
-                                        {source}
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {Object.keys(dataReceived).length > 0 && (
-                                    <div className="space-y-1.5">
-                                      <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide mb-2">
-                                        Data Received:
-                                      </p>
-                                      <div className="space-y-1.5">
-                                        {Object.entries(dataReceived).map(
-                                          ([key, value]) => (
-                                            <div
-                                              key={key}
-                                              className="flex justify-between items-center text-[11px]"
-                                            >
-                                              <span className="text-slate-500 font-medium capitalize">
-                                                {key.replace(/_/g, " ")}:
-                                              </span>
-                                              <span className="font-semibold text-slate-900 text-right">
-                                                {typeof value === "number"
-                                                  ? value.toLocaleString(
-                                                      "en-IN"
-                                                    )
-                                                  : String(value)}
-                                              </span>
-                                            </div>
-                                          )
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          }
-                        )}
-                      </div>
-                    );
-                  })()}
-                </section>
-              )}
-
-              <section className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setAccordionState((prev) => ({
-                        ...prev,
-                        documentDetails: !prev.documentDetails,
-                      }))
-                    }
-                    className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
-                  >
-                    <span className="text-xs">
-                      {accordionState.documentDetails ? "▼" : "▶"}
-                    </span>
-                    <h3>Document Details</h3>
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={selectedDocType}
-                      onChange={(e) => setSelectedDocType(e.target.value)}
-                      className="rounded-full bg-white border border-slate-300 px-3 py-1.5 text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-                    >
-                      <option value="form16">Form 16</option>
-                      <option value="caste_certificate">
-                        Caste Certificate
-                      </option>
-                      <option value="marksheet_10th">10th Marksheet</option>
-                      <option value="marksheet_12th">12th Marksheet</option>
-                      <option value="graduation">Graduation Marksheet</option>
-                      <option value="offer_letter">Offer Letter</option>
-                      <option value="bank_passbook">Bank Passbook</option>
-                      <option value="statement_of_purpose">
-                        Statement of Purpose
-                      </option>
-                      <option value="cv">CV/Resume</option>
-                    </select>
-                    <button
-                      type="button"
-                      disabled={isViewDocsLoading || !selectedDocType}
-                      onClick={async () => {
-                        if (!selectedApplication || !selectedDocType) return;
-                        setViewDocsError(null);
-                        setIsViewDocsLoading(true);
-                        try {
-                          const token =
-                            typeof window !== "undefined"
-                              ? window.localStorage.getItem("grantiq_token")
-                              : null;
-
-                          const response = await fetch(
-                            `${API_BASE_URL}/api/grantor/applications/view-documents`,
-                            {
-                              method: "POST",
-                              headers: {
-                                "Content-Type": "application/json",
-                                ...(token
-                                  ? { Authorization: `Bearer ${token}` }
-                                  : {}),
-                              },
-                              body: JSON.stringify({
-                                application_id: selectedApplication.id,
-                                type: selectedDocType,
-                              }),
-                            }
-                          );
-
-                          const rawError = await (async () => {
-                            if (response.ok) return null;
-                            const json = (await response
-                              .json()
-                              .catch(() => ({}))) as {
-                              message?: string;
-                              detail?: string;
-                            };
-
-                            if (response.status === 404 && json.detail) {
-                              return json.detail;
-                            }
-
-                            return (
-                              json.message ||
-                              json.detail ||
-                              "Unable to fetch documents. Please try again."
-                            );
-                          })();
-
-                          if (rawError) {
-                            throw new Error(rawError);
-                          }
-
-                          const data = (await response
-                            .json()
-                            .catch(() => ({}))) as {
-                            url?: string;
-                            presigned_url?: string;
-                            data?: { url?: string; presigned_url?: string };
-                          };
-
-                          const url =
-                            data.presigned_url ||
-                            data.url ||
-                            data.data?.presigned_url ||
-                            data.data?.url;
-
-                          if (!url) {
-                            throw new Error("Document URL not available.");
-                          }
-
-                          if (typeof window !== "undefined") {
-                            window.open(url, "_blank", "noopener,noreferrer");
-                          }
-                        } catch (err) {
-                          const message =
-                            err instanceof Error
-                              ? err.message
-                              : "Something went wrong while opening documents.";
-                          setViewDocsError(message);
-                        } finally {
-                          setIsViewDocsLoading(false);
-                        }
-                      }}
-                      className="inline-flex items-center rounded-full bg-purple-600 border border-purple-500 px-3 py-1.5 text-[11px] font-medium text-white hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {isViewDocsLoading ? "Opening..." : "View Documents"}
-                    </button>
-                  </div>
-                </div>
-
-                {accordionState.documentDetails && (
-                  <div className="space-y-3">
-                    {viewDocsError && (
-                      <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
-                        {viewDocsError}
-                      </p>
-                    )}
-
-                    <div className="space-y-2 text-xs text-slate-700">
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">Tribe</span>
-                        <span className="font-medium text-right">
-                          {selectedApplication.tribe || "—"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">
-                          ST Certificate No.
-                        </span>
-                        <span className="font-medium text-right">
-                          {selectedApplication.st_certificate_number || "—"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">
-                          ST Certificate Issue
-                        </span>
-                        <span className="font-medium text-right">
-                          {selectedApplication.certificate_issue_date
-                            ? formatDate(
-                                selectedApplication.certificate_issue_date
-                              )
-                            : "—"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">
-                          Caste Validity Cert No.
-                        </span>
-                        <span className="font-medium text-right">
-                          {selectedApplication.caste_validity_cert_number ||
-                            "—"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">
-                          Caste Validity Issue
-                        </span>
-                        <span className="font-medium text-right">
-                          {selectedApplication.caste_validity_issue_date
-                            ? formatDate(
-                                selectedApplication.caste_validity_issue_date
-                              )
-                            : "—"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">Aadhaar Verified</span>
-                        <span className="font-medium text-right">
-                          {selectedApplication.aadhaar_verified ? "Yes" : "No"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">PAN Verified</span>
-                        <span className="font-medium text-right">
-                          {selectedApplication.pan_verified ? "Yes" : "No"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              <section className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setAccordionState((prev) => ({
-                      ...prev,
-                      universityDetails: !prev.universityDetails,
-                    }))
-                  }
-                  className="flex items-center gap-2 text-sm font-semibold text-slate-900 hover:text-slate-700"
-                >
-                  <span className="text-xs">
-                    {accordionState.universityDetails ? "▼" : "▶"}
-                  </span>
-                  <h3>University Details</h3>
-                </button>
-                {accordionState.universityDetails && (
-                  <p className="text-xs text-slate-700">
-                    University and course details will appear here once the
-                    applicant completes the academic section of the application.
-                  </p>
-                )}
-              </section>
             </div>
           </div>
         </div>
