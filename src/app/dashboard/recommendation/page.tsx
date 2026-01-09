@@ -264,7 +264,7 @@ function RecommendationPageData() {
         documentDetails: false,
         universityDetails: false,
         recommendationsDetailsTable: true,
-        sourceVerifications: false,
+        sourceVerifications: false, // Always collapsed by default
       });
     }
   }, [verificationInProgress]);
@@ -281,13 +281,52 @@ function RecommendationPageData() {
         documentDetails: false,
         universityDetails: false,
         recommendationsDetailsTable: true,
-        sourceVerifications: false,
+        sourceVerifications: false, // Always collapsed by default
       });
       // Reset verification details when application changes
       setShowVerificationDetails(false);
       setVerificationResults(null);
+      
+      // Auto-fetch verification when verificationInProgress is false (when view button is clicked)
+      if (verificationInProgress === false) {
+        // Use setTimeout to ensure state reset happens first
+        setTimeout(() => {
+          handleFetchVerification();
+        }, 0);
+      }
     }
   }, [selectedApplication?.id, verificationInProgress]);
+
+  // Helper function to check if any verification status is not verified/inprogress/rejected
+  // Returns true if should show reject tick (i.e., has status that is not verified/inprogress/rejected)
+  const shouldShowRejectTick = (results: any): boolean => {
+    if (!results || typeof results !== "object") return false;
+    
+    const documentEntries = Object.entries(results).filter(([docType, docData]) => {
+      if (docType === "application_id") return false;
+      if (!docData || typeof docData !== "object") return false;
+      return true;
+    });
+
+    if (documentEntries.length === 0) return false;
+
+    // Check all verification entries
+    for (const [, docData] of documentEntries) {
+      if (!Array.isArray(docData) || docData.length === 0) continue;
+      const latest = docData[docData.length - 1];
+      const verificationValue = latest?.result?.verification;
+      
+      // verificationValue: true = verified, false = failed/rejected, null = inprogress
+      // Status is valid if it's verified (true), inprogress (null), or rejected/failed (false)
+      // Show reject tick if status is something else (undefined, unexpected value, etc.)
+      const isValidStatus = verificationValue === true || verificationValue === false || verificationValue === null;
+      if (!isValidStatus) {
+        return true; // Invalid/unexpected status, show reject tick
+      }
+    }
+    
+    return false; // All statuses are valid (verified/inprogress/rejected)
+  };
 
   useEffect(() => {
     async function loadApplications() {
@@ -641,10 +680,13 @@ function RecommendationPageData() {
 
       setVerificationResults(results);
       setShowVerificationDetails(true);
-      setAccordionState((prev) => ({
-        ...prev,
-        sourceVerifications: true, // Expand the section when verification is fetched
-      }));
+      // Only auto-expand when verificationInProgress is true, keep collapsed when false
+      if (verificationInProgress) {
+        setAccordionState((prev) => ({
+          ...prev,
+          sourceVerifications: true, // Expand the section when verification is fetched in verification mode
+        }));
+      }
     } catch (err) {
       const message =
         err instanceof Error
@@ -655,6 +697,7 @@ function RecommendationPageData() {
       setIsLoadingVerification(false);
     }
   };
+
 
   function getDocumentTypeLabel(docType: string): string {
     const labels: { [key: string]: string } = {
@@ -902,6 +945,24 @@ function RecommendationPageData() {
           || selectedApplication.submitted_at 
           || null;
         const formattedDate = formatAppliedDate(appliedDate);
+
+        // Format date with time for footer
+        const formatSubmittedDateTime = (dateString: string | null) => {
+          if (!dateString) return "";
+          const date = new Date(dateString);
+          if (Number.isNaN(date.getTime())) return "";
+          return date.toLocaleString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+            timeZone: "Asia/Kolkata",
+            timeZoneName: "short",
+          });
+        };
+        const submittedDateTime = formatSubmittedDateTime(appliedDate);
 
         // Get scholarship type based on course level priority
         const getScholarshipType = () => {
@@ -1670,67 +1731,89 @@ function RecommendationPageData() {
                     <h3 className="text-base font-bold text-slate-900">
                       03 Verifications by Source
                     </h3>
-                    {/* Green Checkmark */}
+                    {/* Tick or Reject Mark */}
                     {showVerificationDetails && verificationResults && (
-                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-3 h-3 text-white"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
+                      <>
+                        {shouldShowRejectTick(verificationResults) ? (
+                          // Reject Tick (Red X)
+                          <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                        ) : (
+                          // Green Checkmark
+                          <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                            <svg
+                              className="w-3 h-3 text-white"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleFetchVerification}
-                      disabled={isLoadingVerification}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-                        isLoadingVerification
-                          ? "bg-slate-100 text-slate-700 border border-slate-300"
-                          : "bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
-                      }`}
-                    >
-                      {isLoadingVerification ? (
-                        <>
-                          <span className="inline-flex h-3 w-3 items-center justify-center">
-                            <svg
-                              className="animate-spin h-2.5 w-2.5"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              ></path>
-                            </svg>
-                          </span>
-                          <span>Loading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-sm">🔍</span>
-                          <span>Verification</span>
-                        </>
-                      )}
-                    </button>
+                    {verificationInProgress && (
+                      <button
+                        type="button"
+                        onClick={handleFetchVerification}
+                        disabled={isLoadingVerification}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                          isLoadingVerification
+                            ? "bg-slate-100 text-slate-700 border border-slate-300"
+                            : "bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
+                        }`}
+                      >
+                        {isLoadingVerification ? (
+                          <>
+                            <span className="inline-flex h-3 w-3 items-center justify-center">
+                              <svg
+                                className="animate-spin h-2.5 w-2.5"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                              </svg>
+                            </span>
+                            <span>Loading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-sm">🔍</span>
+                            <span>Verification</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                     {/* Collapse/Expand Control */}
                     <button
                       type="button"
@@ -2170,6 +2253,150 @@ function RecommendationPageData() {
               )}
 
 
+            </div>
+
+            {/* Footer with Submitted Date and Approve Grant Button */}
+            <div className="px-6 py-4 border-t border-slate-200 bg-white flex items-center justify-between">
+              {/* Left: Submitted Date */}
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <svg
+                  className="w-4 h-4 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>
+                  {submittedDateTime ? `Submitted: ${submittedDateTime}` : "Submitted: —"}
+                </span>
+              </div>
+
+              {/* Right: Download PDF and Approve Grant Buttons */}
+              {!verificationInProgress && (
+                <div className="flex items-center gap-3">
+                  {/* Download PDF Button */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsDownloading(true);
+                      try {
+                        const res = await fetch("/api/download-pdf", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            applicationId: selectedApplication.application_id,
+                            data: selectedApplication,
+                          }),
+                        });
+
+                        if (!res.ok) {
+                          let errorMessage = "Failed to generate PDF";
+                          try {
+                            const errorData = await res.json();
+                            errorMessage = errorData.error || errorMessage;
+                          } catch {
+                            // If response is not JSON, use default message
+                          }
+                          throw new Error(errorMessage);
+                        }
+
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `application-${selectedApplication.application_id}.pdf`;
+                        a.click();
+
+                        window.URL.revokeObjectURL(url);
+                      } catch (error) {
+                        alert(
+                          error instanceof Error
+                            ? error.message
+                            : "Failed to generate PDF. Please check your AWS S3 configuration."
+                        );
+                      } finally {
+                        setIsDownloading(false);
+                      }
+                    }}
+                    disabled={isDownloading}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-purple-700 rounded-lg hover:bg-purple-50 disabled:bg-purple-100 disabled:text-purple-400 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-sm shadow-sm hover:shadow border border-purple-200 hover:border-purple-300"
+                  >
+                    {isDownloading ? (
+                      <>
+                        <svg
+                          className="animate-spin h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Generating PDF...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        Download PDF
+                      </>
+                    )}
+                  </button>
+
+                  {/* Approve Grant Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowApprovalConfirmation(true)}
+                    className="flex items-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-6 py-2.5 text-sm font-medium text-white transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    Approve Grant
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
