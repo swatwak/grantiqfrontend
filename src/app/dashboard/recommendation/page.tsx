@@ -886,7 +886,7 @@ function RecommendationPageData() {
                 <p className="text-xs text-purple-100 mt-1">
                   ID:{" "}
                   <span className="font-mono">
-                    {selectedApplication.application_id}
+                    {selectedApplication.application_id.slice(-6).toUpperCase()}
                   </span>
                   {" · "}
                   Step {selectedApplication.current_step} · Status:{" "}
@@ -2218,7 +2218,7 @@ function RecommendationPageData() {
                   <div className="flex justify-between">
                     <span>ID:</span>
                     <span className="font-mono font-medium">
-                      {selectedApplication.application_id}
+                      {selectedApplication.application_id.slice(-6).toUpperCase()}
                     </span>
                   </div>
                   {selectedApplication.recommendation_details?.zone && (
