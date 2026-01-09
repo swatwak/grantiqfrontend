@@ -33,6 +33,14 @@ type DataConfig = {
 
 type TabType = "seats" | "weightage" | "dataconfig";
 
+// Default hardcoded dates
+const defaultDataConfig: DataConfig = {
+  enrollmentStartDate: "2026-03-07",
+  enrollmentEndDate: "2026-08-31",
+  grantAllocationStartDate: "2026-09-07",
+  grantAllocationEndDate: "2026-11-30",
+};
+
 export default function EngineRulesPage() {
   const [activeTab, setActiveTab] = useState<TabType>("seats");
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>("all");
@@ -44,11 +52,22 @@ export default function EngineRulesPage() {
   const [ageThreshold, setAgeThreshold] = useState("");
   const [courseConfig, setCourseConfig] = useState<CourseConfig[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
-  const [dataConfig, setDataConfig] = useState<DataConfig>({
-    enrollmentStartDate: "",
-    enrollmentEndDate: "",
-    grantAllocationStartDate: "",
-    grantAllocationEndDate: "",
+
+  // Load from localStorage with lazy initializer
+  const [dataConfig, setDataConfig] = useState<DataConfig>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("dataConfig");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          // Merge with defaults to ensure all fields exist
+          return { ...defaultDataConfig, ...parsed };
+        } catch (e) {
+          console.error("Failed to parse stored dataConfig", e);
+        }
+      }
+    }
+    return defaultDataConfig;
   });
   const [editedDataConfig, setEditedDataConfig] = useState<DataConfig>({
     enrollmentStartDate: "",
@@ -110,6 +129,14 @@ export default function EngineRulesPage() {
   useEffect(() => {
     const stored = localStorage.getItem("verificationInProgress");
     setVerificationInProgress(stored === "true");
+
+    // Ensure default dates are saved to localStorage if they don't exist
+    const storedDataConfig = localStorage.getItem("dataConfig");
+    if (!storedDataConfig) {
+      // If no stored config, save defaults
+      localStorage.setItem("dataConfig", JSON.stringify(defaultDataConfig));
+      setDataConfig(defaultDataConfig);
+    }
   }, []);
 
   // Persist to localStorage
@@ -121,6 +148,13 @@ export default function EngineRulesPage() {
       );
     }
   }, [verificationInProgress]);
+
+  // Persist dataConfig to localStorage whenever it changes
+  useEffect(() => {
+    if (dataConfig && Object.values(dataConfig).some((val) => val !== "")) {
+      localStorage.setItem("dataConfig", JSON.stringify(dataConfig));
+    }
+  }, [dataConfig]);
 
   useEffect(() => {
     const fetchCourseConfig = async () => {
@@ -529,7 +563,10 @@ export default function EngineRulesPage() {
         alert("Failed to save course rules");
         return;
       }
-      setDataConfig(editedDataConfig);
+      // Update dataConfig and save to localStorage
+      const updatedDataConfig = { ...editedDataConfig };
+      setDataConfig(updatedDataConfig);
+      localStorage.setItem("dataConfig", JSON.stringify(updatedDataConfig));
       setIsEditing(false);
       alert("Rules updated successfully");
     } catch (err) {
