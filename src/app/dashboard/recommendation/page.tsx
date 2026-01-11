@@ -2177,7 +2177,7 @@ function RecommendationPageData() {
                                       value: rd?.isFirstTimeBeneficiary ? "Yes" : "No",
                                       score: sb?.beneficiaryScore?.toFixed(2) || "0.00",
                                       max: "15",
-                                      icon: "✓",
+                                      icon: "✅",
                                     },
                                     {
                                       criteria: "DOB (year/month/day)",
