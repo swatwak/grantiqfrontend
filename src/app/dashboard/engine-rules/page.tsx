@@ -1107,12 +1107,39 @@ export default function EngineRulesPage() {
                     <input
                       type="checkbox"
                       checked={verificationInProgress ?? false}
-                      onChange={(e) => {
-                        setVerificationInProgress(e.target.checked);
-                        localStorage.removeItem("run_recommendation_data");
+                      onChange={async (e) => {
+                        const checked = e.target.checked;
+                        setVerificationInProgress(checked);
+
+                        // If toggled ON (or however you want trigger)
+                        try {
+                          const token =
+                            typeof window !== "undefined"
+                              ? localStorage.getItem("grantiq_token")
+                              : null;
+
+                          const headers: Record<string, string> = {
+                            "Content-Type": "application/json",
+                          };
+
+                          if (token) {
+                            headers.Authorization = token; // or `Bearer ${token}` if needed
+                          }
+
+                          const response = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL + "/api/grantor/applications/grant_reset", {
+                            method: "POST",
+                            headers,
+                          });
+
+                          const data = await response.json();
+                          console.log(data);
+                        } catch (error) {
+                          console.error("Grant Reset Error:", error);
+                        }
                       }}
                       className="sr-only"
                     />
+
                     <div
                       className={`w-11 h-6 rounded-full transition ${
                         !verificationInProgress ? "bg-green-500" : "bg-gray-300"
