@@ -758,7 +758,7 @@ function RecommendationPageData() {
       universityDetails: true,
       recommendationsDetailsTable: true,
       sourceVerifications: true,
-      validationResults: false,
+      validationResults: true,
     });
   };
 
@@ -1174,7 +1174,17 @@ function RecommendationPageData() {
                         )}
                       <div className="rounded-lg bg-white/15 px-5 py-3 text-center">
                         <p className="text-sm text-white/80">Status</p>
-                        <p className="text-sm font-semibold text-green-300">
+                        <p
+                          className={`text-sm font-semibold ${
+                            selectedApplication.application_status ===
+                            "verification_in_progress"
+                              ? "text-orange-400"
+                              : selectedApplication.application_status ===
+                                "verification_failed"
+                              ? "text-red-600"
+                              : "text-green-300"
+                          }`}
+                        >
                           {formatStatus(selectedApplication.application_status)}
                         </p>
                       </div>
