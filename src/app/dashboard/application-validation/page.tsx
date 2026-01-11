@@ -18,6 +18,7 @@ type DashboardKPIs = {
 type CourseLevelData = {
   total_seats: number;
   total_applications: number;
+  seats_granted: number;
 };
 
 type CourseData = {
@@ -154,7 +155,7 @@ export default function DashboardPage() {
             level,
             seatsAvailable: levelData.total_seats,
             applicationsReceived: levelData.total_applications,
-            seatsGranted: 0,
+            seatsGranted: levelData.seats_granted,
             status,
           };
         })

@@ -192,6 +192,25 @@ export async function POST(req: Request) {
       }
     }
 
+    /* Add pagination numbers to all pages */
+      const pageIndices = finalPdf.getPageIndices();
+      const totalPages = pageIndices.length;
+      const boldFont = await finalPdf.embedFont(StandardFonts.HelveticaBold);
+
+      pageIndices.forEach((_, index) => {
+        const page = finalPdf.getPage(index);
+        const pageHeight = page.getHeight();
+        const pageNumber = `${index + 1} of ${totalPages}`;
+
+        page.drawText(pageNumber, {
+          x: page.getWidth() - 80,
+          y: 20,
+          size: 10,
+          font: boldFont,
+          color: rgb(0, 0, 0),
+        });
+      });
+
     const pdfBytes = await finalPdf.save();
 
     const arrayBuffer =
