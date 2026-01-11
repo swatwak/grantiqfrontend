@@ -68,15 +68,35 @@ export default function Home() {
     <div className="min-h-screen app-background flex items-center justify-center px-4 py-10">
       <div className="max-w-6xl w-full flex flex-col lg:flex-row items-center gap-16 relative z-10">
         <div className="flex-1 text-center lg:text-left">
-          <div className="mb-6">
+          <div className="mb-6 flex flex-col items-center lg:items-start gap-3">
+            {/* Top Logos */}
+            <div className="flex items-center gap-4">
+              <Image
+                src="/images/logo1.png"
+                alt="Logo 1"
+                width={130}
+                height={130}
+                priority
+              />
+              <Image
+                src="/images/logo2.png"
+                alt="Logo 2"
+                width={90}
+                height={90}
+                priority
+              />
+            </div>
+
+            {/* Existing GrantIQ Logo */}
             <Image
               src="/logo_dark.svg"
               alt="GrantIQ Logo"
-              width={180}
-              height={54}
+              width={200}
+              height={70}
               priority
             />
           </div>
+
           <h1 className="text-4xl md:text-5xl font-semibold leading-tight mb-4 text-slate-900">
             Welcome Back
             <br />
@@ -94,7 +114,7 @@ export default function Home() {
                 Sign In
               </h2>
               <p className="text-sm text-slate-300">
-                Use your grantor credentials to access GrantIQ.
+                Use your credentials to access GrantIQ.
               </p>
             </div>
 

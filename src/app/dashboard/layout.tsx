@@ -48,22 +48,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <VerificationEvents />
       <header className="h-16 border-b border-slate-200 bg-white px-6 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Image
             src="/logo_dark.svg"
             alt="GrantIQ Logo"
             width={120}
             height={36}
           />
-          {/* <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md">
-            <span className="text-sm font-semibold text-white">IQ</span>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-900">GrantIQ</p>
-            <p className="text-[11px] text-slate-600">
-              Smart Scholarship Management Platform
+          <div className="leading-tight border-l border-slate-300 pl-4">
+            <p className="text-sm font-semibold text-slate-900">
+              Rajarshi Shahu Maharaj
             </p>
-          </div> */}
+            <p className="text-xs text-slate-600">Foreign Scholarship Scheme</p>
+          </div>
         </div>
 
         <div className="relative flex items-center gap-4">
