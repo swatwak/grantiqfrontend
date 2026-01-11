@@ -34,7 +34,7 @@ async function streamToBuffer(stream: any): Promise<Uint8Array> {
 
 export async function POST(req: Request) {
   try {
-    const { applicationId, data } = await req.json();
+    const { applicationId, data, images } = await req.json();
 
     if (!applicationId || !data) {
       return NextResponse.json(
@@ -87,6 +87,62 @@ export async function POST(req: Request) {
     const finalPdf = await PDFDocument.create();
     await drawApplicationTables(finalPdf, data);
     const font = await finalPdf.embedFont(StandardFonts.HelveticaBold);
+
+    const addImagePage = async (base64: string, title: string) => {
+      if (!base64) return;
+
+      const imgBytes = Uint8Array.from(atob(base64.split(",")[1]), (c) =>
+        c.charCodeAt(0)
+      );
+
+      const image = await finalPdf.embedPng(imgBytes);
+
+      // A4 page size (points)
+      const page = finalPdf.addPage([595.28, 841.89]);
+
+      const pageWidth = page.getWidth();
+      const pageHeight = page.getHeight();
+
+      const margin = 40;
+      const titleHeight = 30;
+
+      const maxWidth = pageWidth - margin * 2;
+      const maxHeight = pageHeight - margin * 2 - titleHeight;
+
+      // 🔑 SCALE PROPERLY (THIS FIXES CUTTING)
+      const scale = Math.min(maxWidth / image.width, maxHeight / image.height);
+
+      const imgWidth = image.width * scale;
+      const imgHeight = image.height * scale;
+
+      // Center horizontally
+      const x = (pageWidth - imgWidth) / 2;
+
+      // Top-aligned under title
+      const y = pageHeight - imgHeight - margin - titleHeight;
+
+      // Title
+      page.drawText(title, {
+        x: margin,
+        y: pageHeight - margin - 18,
+        size: 14,
+        font,
+        color: rgb(0.12, 0.35, 0.75),
+      });
+
+      // Image
+      page.drawImage(image, {
+        x,
+        y,
+        width: imgWidth,
+        height: imgHeight,
+      });
+    };
+
+    await addImagePage(images.personal, "01 Personal Details Verification");
+    await addImagePage(images.documents, "02 Document Validation Results");
+    await addImagePage(images.source, "03 Verifications by Source");
+    await addImagePage(images.recommendations, "04 Recommendations Details");
 
     /* -----------------------------
        ATTACH S3 PDFs

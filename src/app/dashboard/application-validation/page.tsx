@@ -390,13 +390,13 @@ export default function DashboardPage() {
                       {row.course}
                     </td>
                     <td className="px-6 py-4 text-slate-700">{row.level}</td>
-                    <td className="px-6 py-4 text-slate-700">
+                    <td className="px-6 py-4 text-right text-slate-700">
                       {row.seatsAvailable}
                     </td>
-                    <td className="px-6 py-4 text-slate-700">
+                    <td className="px-6 py-4 text-right text-slate-700">
                       {row.applicationsReceived}
                     </td>
-                    <td className="px-6 py-4 text-slate-700">
+                    <td className="px-6 py-4 text-right text-slate-700">
                       {row.seatsGranted}
                     </td>
                     <td

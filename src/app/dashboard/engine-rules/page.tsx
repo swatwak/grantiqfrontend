@@ -133,12 +133,12 @@ export default function EngineRulesPage() {
   // Min and max limits for each weightage field
   const weightageLimits: Record<keyof Weightage, { min: number; max: number }> =
     {
-      income: { min: 15, max: 40 },
       academic: { min: 15, max: 30 },
+      income: { min: 15, max: 40 },
       course: { min: 10, max: 30 },
       university: { min: 10, max: 30 },
+      beneficiary: { min: 1, max: 5 },
       age: { min: 1, max: 5 },
-      beneficiary: { min: 5, max: 15 },
     };
 
   const [verificationInProgress, setVerificationInProgress] = useState<
@@ -240,11 +240,11 @@ export default function EngineRulesPage() {
   };
 
   const weightageDefaults: Weightage = {
-    academic: 35,
-    income: 20,
+    academic: 25,
+    income: 30,
     university: 15,
-    course: 10,
-    beneficiary: 15,
+    course: 20,
+    beneficiary: 5,
     age: 5,
   };
 
@@ -647,21 +647,22 @@ export default function EngineRulesPage() {
                           {course.course_field}
                         </div>
 
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            className="w-24 rounded border border-slate-400 px-3 py-1.5 text-sm text-right font-semibold text-slate-900"
-                            value={course.seats}
-                            onChange={(e) => {
-                              course.seats = Number(e.target.value);
-                              setEditedConfig([...editedConfig]);
-                            }}
-                          />
-                        ) : (
-                          <span className="text-sm font-semibold text-slate-900">
-                            {course.seats}
-                          </span>
-                        )}
+                        {/* {isEditing ? ( */}
+                        <input
+                          disabled={!isEditing}
+                          type="number"
+                          className="w-24 rounded border border-slate-400 px-3 py-1.5 text-sm text-right font-semibold text-slate-900"
+                          value={course.seats}
+                          onChange={(e) => {
+                            course.seats = Number(e.target.value);
+                            setEditedConfig([...editedConfig]);
+                          }}
+                        />
+                        {/* // ) : (
+                        //   <span className="text-sm font-semibold text-slate-900">
+                        //     {course.seats}
+                        //   </span>
+                        // )} */}
                       </div>
                     ))}
                   </div>

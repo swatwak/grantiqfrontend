@@ -92,6 +92,10 @@ export function statusStyles(status: ApiApplicationStatus) {
     return "bg-pink-500/15 text-pink-600 border border-pink-400/40";
   }
 
+  if (normalized === "grant_approved") {
+    return "bg-emerald-500/15 text-emerald-600 border border-emerald-400/40";
+  }
+
   return "bg-slate-500/15 text-slate-600 border border-slate-400/40";
 }
 
@@ -285,7 +289,7 @@ function RejectionLogsContent() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by applicant name or application ID"
+                placeholder="Search by applicant"
                 className="w-full rounded-lg bg-white border border-slate-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -307,7 +311,7 @@ function RejectionLogsContent() {
           </div>
         </div>
 
-        <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
+        <div className="overflow-x-auto overflow-y-auto max-h-[55vh]">
           {isLoading ? (
             <div className="px-5 py-6 text-sm text-slate-600">
               Loading rejected applications...
