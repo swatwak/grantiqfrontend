@@ -220,7 +220,7 @@ function RecommendationPageData() {
     const fetchCourseConfig = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grantor/applications/config/course-data`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grantor/config/course-data`
         );
         const json = await res.json();
 
@@ -374,7 +374,7 @@ function RecommendationPageData() {
         });
 
         const response = await fetch(
-          `${API_BASE_URL}/api/grantor/applications/recommendation?${params.toString()}`,
+          `${API_BASE_URL}/api/grantor/recommendations/list-recommendation?${params.toString()}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -429,7 +429,7 @@ function RecommendationPageData() {
             : null;
 
         const response = await fetch(
-          `${API_BASE_URL}/api/grantor/applications/approve_grant`,
+          `${API_BASE_URL}/api/grantor/recommendations/approve_grant`,
           {
             method: "POST",
             headers: {
@@ -492,7 +492,7 @@ function RecommendationPageData() {
           : null;
 
       const response = await fetch(
-        `${API_BASE_URL}/api/grantor/applications/approve_grant`,
+        `${API_BASE_URL}/api/grantor/recommendations/approve_grant`,
         {
           method: "POST",
           headers: {
@@ -640,7 +640,7 @@ function RecommendationPageData() {
           : null;
 
       const response = await fetch(
-        `${API_BASE_URL}/api/grantor/applications/get-verification-result`,
+        `${API_BASE_URL}/api/grantor/recommendations/get-verification-result`,
         {
           method: "POST",
           headers: {

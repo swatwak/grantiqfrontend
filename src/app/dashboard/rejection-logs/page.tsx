@@ -187,7 +187,7 @@ function RejectionLogsContent() {
             : null;
 
         // Always fetch rejected applications
-        const url = `${API_BASE_URL}/api/grantor/applications/all?status=rejected`;
+        const url = `${API_BASE_URL}/api/grantor/dashboard/list-all-applications?status=rejected`;
 
         const response = await fetch(url, {
           headers: {

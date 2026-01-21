@@ -180,7 +180,7 @@ export default function EngineRulesPage() {
     const fetchCourseConfig = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grantor/applications/config/course-data`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grantor/config/course-data`
         );
         const json = await res.json();
 
@@ -409,7 +409,7 @@ export default function EngineRulesPage() {
 
       // Save course config (seats and weightage)
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grantor/applications/config/course-data`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/grantor/config/course-data`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -1126,7 +1126,7 @@ export default function EngineRulesPage() {
                             headers.Authorization = token; // or `Bearer ${token}` if needed
                           }
 
-                          const response = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL + "/api/grantor/applications/grant_reset", {
+                          const response = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL + "/api/grantor/recommendations/grant_reset", {
                             method: "POST",
                             headers,
                           });

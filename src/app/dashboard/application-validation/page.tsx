@@ -99,7 +99,7 @@ export default function DashboardPage() {
             : null;
 
         const response = await fetch(
-          `${API_BASE_URL}/api/grantor/applications/dashboard-data`,
+          `${API_BASE_URL}/api/grantor/dashboard/dashboard-data`,
           {
             headers: {
               "Content-Type": "application/json",
